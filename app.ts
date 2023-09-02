@@ -4,10 +4,7 @@ import path from "path";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
 import cors from "cors";
-import { expressjwt } from "express-jwt";
 import bodyParser from "body-parser";
-// 秘钥配置
-import config from "./config";
 // 引入路由模块
 import userRouter from "./routes/user";
 import articleRouter from "./routes/article";
@@ -21,6 +18,10 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "jade");
 
 // 配置中间件
+app.use(logger("dev"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 app.use(cors());
 app.use(
   bodyParser.json({
@@ -34,32 +35,22 @@ app.use(
     parameterLimit: 50000,
   })
 );
-app.use(
-  expressjwt({ secret: config.secretKey, algorithms: ["HS256"] }).unless({
-    path: [/^\/user\//, /^\/api\//, /^\/images\//],
-  })
-);
-app.use(logger("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-
 // 配置静态资源路径
-app.use("/images", express.static(path.join(__dirname, "./public/images")));
+app.use(express.static("public"));
 
 // 注册路由模块
 app.use("/user", userRouter);
 app.use("/article", articleRouter);
-app.use(otherRouter);
 app.use("/message", messageRouter);
+app.use(otherRouter);
 
 // 捕捉404并转发到错误处理器
-app.use(function (req, res, next) {
+app.use(function (_, __, next) {
   next(createError(404));
 });
 
 // 错误处理器
-app.use(function (err, req, res, next) {
+app.use(function (err, req, res, _) {
   // 设置本地变量，仅在开发环境提供错误信息
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
