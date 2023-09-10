@@ -1,13 +1,18 @@
-// 导入mysql模块
 import mysql from "mysql";
-import { DATABASE_BASE_CONFIG, DATABASE_SERVER_CONFIG } from "../constance";
+import { dbConfig } from "./db.config";
 
-// 创建数据库连接对象
 const db = mysql.createPool({
-  // ...DATABASE_BASE_CONFIG
-  ...DATABASE_SERVER_CONFIG,
-  user: "root",
+  ...dbConfig,
+  connectionLimit: 10,
 });
 
-// 向外共享db数据库连接对象
+// 判断数据库是否连接成功，并打印控制台信息
+db.getConnection((err, _) => {
+  if (err) {
+    console.log("数据库连接失败");
+  } else {
+    console.log("数据库连接成功");
+  }
+});
+
 export default db;

@@ -14,6 +14,7 @@ class UserController {
     try {
       // 1.接收表单数据(此处的userinfo含有三个属性:name,account,password)
       const { name, account, password } = req.body;
+
       // 2.定义sql语句，查找该账号是否被占用
       const retrieveRes = await queryPromise(
         "select * from users where account=?",
@@ -27,16 +28,19 @@ class UserController {
         });
         return;
       }
+
       // 3. 若当前用户名可用，调用bcryptjs加密密码
       const salt = bcryptjs.genSaltSync(10);
       const passwordEncrypted = bcryptjs.hashSync(password, salt);
+
       // 4.定义插入用户的SQL语句
       await queryPromise("insert into users set ?", {
         name,
         account,
         password: passwordEncrypted,
       });
-      // 5.返回成功的响应
+
+      // 5.返回成功响应
       unifiedResponseBody({
         result_code: 0,
         result_msg: "register succeed",
@@ -48,32 +52,29 @@ class UserController {
   };
 
   // 登录的处理函数
-  login = (req: Request, res: Response) => {
-    // 获取登录时提交的数据
-    const userinfo = req.query;
-    // 在数据库中查询用户所提交的账号
-    const sql_Login = "select * from users where account=?";
-    db.query(sql_Login, userinfo.account, (err, userinfo_results) => {
-      if (err)
-        return res.send({
-          result_code: 1,
-          result_msg: err,
-        });
-      if (userinfo_results.length !== 1)
-        return res.send({
-          result_code: 1,
-          result_msg: "login failed",
-          result_length: userinfo_results.length,
-        });
+  login = async (req: Request, res: Response) => {
+    try {
+      // 1. 获取登录时提交的数据
+      const { account, password } = req.query;
+
+      // 2. 在数据库中查询用户所提交的账号
+      const userinfo_results = await queryPromise(
+        "select * from users where account=?",
+        account
+      );
+
       const compareResult = bcryptjs.compareSync(
-        userinfo.password as string,
+        password as string,
         userinfo_results[0].password
       );
+
       if (!compareResult) {
-        return res.send({
+        unifiedResponseBody({
           result_code: 1,
           result_msg: "密码错误！请重新输入",
+          res,
         });
+        return;
       } else {
         // 如果输入正确，则生成 JWT token 字符串返回给客户端
         // 先剔除除了id和account以外的任何值
@@ -88,44 +89,35 @@ class UserController {
           signature: "",
           introduce: "",
         };
-        const token = jwt.sign(user, config.secretKey, { expiresIn: "24h" });
+        const token = jwt.sign(user, "littleSharing", { expiresIn: "24h" });
+
         // 获取该用户的keywords
-        const sql_GetKeywords =
-          "select keywords_name,keywords_count from keywords where user_id=?";
-        db.query(sql_GetKeywords, user.id, (err, keyword_results) => {
-          if (err) {
-            return res.send({
-              result_code: 1,
-              result_msg: "get keywords failed:" + err.message,
-            });
-          } else {
-            // 获取全局的article_labels
-            const sql_GetArticleLabels =
-              "select label_name as label from article_labels";
-            db.query(sql_GetArticleLabels, (err, label_results) => {
-              if (err) {
-                return res.send({
-                  result_code: 1,
-                  result_msg: "get article_labels failed:" + err.message,
-                });
-              } else {
-                label_results.forEach((item: any) => {
-                  item.value = item.label;
-                });
-                res.send({
-                  result_code: 0,
-                  result_msg: "login succeed",
-                  token: "Bearer " + token,
-                  keywords_list: keyword_results,
-                  user_info: { ...userinfo_results[0], password: null },
-                  article_labels: label_results,
-                });
-              }
-            });
-          }
+        const keyword_results = await queryPromise(
+          "select keywords_name,keywords_count from keywords where user_id=?",
+          user.id
+        );
+        // 获取全局的article_labels
+        const label_results = await queryPromise(
+          "select label_name as label from article_labels"
+        );
+        label_results.forEach((item: any) => {
+          item.value = item.label;
+        });
+        unifiedResponseBody({
+          result_code: 0,
+          result_msg: "login succeed",
+          result: {
+            token: "Bearer " + token,
+            keywords_list: keyword_results,
+            article_labels: label_results,
+            user_info: { ...userinfo_results[0], password: null },
+          },
+          res,
         });
       }
-    });
+    } catch (error) {
+      errorHandler({ error, result_msg: "登录失败", res });
+    }
   };
 
   // 根据user_id获取某个具体登录用户的信息

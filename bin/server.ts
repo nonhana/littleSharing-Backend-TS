@@ -1,7 +1,19 @@
 #!/usr/bin/env node
+/**
+ * 相关的模块依赖导入。
+ */
+import dotenv from "dotenv";
+import http from "http";
+import https from "https";
+import fs from "fs";
+import path from "path";
 import app from "../app";
 import debug from "debug";
-import http from "http";
+
+/**
+ * 读取环境变量配置。
+ */
+dotenv.config();
 
 /**
  * 从环境变量中获取端口并存储在 Express 中。
@@ -10,9 +22,25 @@ const port = normalizePort(process.env.PORT || "4000");
 app.set("port", port);
 
 /**
- * 创建 HTTP 服务器。
+ * 定义创建 HTTP/HTTPS 服务器的函数：
+ * 如果是生产环境，则使用 HTTPS 创建服务器，否则使用 HTTP 创建服务器。
  */
-const server = http.createServer(app);
+function createServer() {
+  if (process.env.NODE_ENV === "production") {
+    const options = {
+      key: fs.readFileSync(
+        path.join(__dirname, "../public/ssl/nonhana.site.key")
+      ),
+      cert: fs.readFileSync(
+        path.join(__dirname, "../public/ssl/nonhana.site_bundle.pem")
+      ),
+    };
+    return https.createServer(options, app);
+  } else {
+    return http.createServer(app);
+  }
+}
+const server = createServer();
 
 /**
  * 监听指定端口，绑定在所有网络接口上。
@@ -43,7 +71,7 @@ function normalizePort(val: any) {
 }
 
 /**
- * HTTP 服务器 "error" 事件的事件监听器。
+ * HTTP/HTTPS 服务器 "error" 事件的事件监听器。
  */
 function onError(error: any) {
   if (error.syscall !== "listen") {
@@ -66,7 +94,7 @@ function onError(error: any) {
 }
 
 /**
- * HTTP 服务器 "listening" 事件的事件监听器。
+ * HTTP/HTTPS 服务器 "listening" 事件的事件监听器。
  */
 function onListening() {
   const addr = server.address();

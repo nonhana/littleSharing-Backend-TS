@@ -8,7 +8,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-export const auth: any = async (
+export const auth = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
