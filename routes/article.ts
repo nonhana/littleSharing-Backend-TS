@@ -1,22 +1,22 @@
 import express from "express";
-import articleController from "../controller/article";
+import { articleController } from "../controller/article";
+import { auth } from "../middleware/user.middleware";
+
 const router = express.Router();
 
-// 编写有关articles的接口
-router.get("/articlelist", articleController.getArticleList);
-router.get("/articlemain", articleController.getArticleMain);
-router.post("/postarticle", articleController.postArticle);
-router.post("/addlabels", articleController.addArticleLabel);
-router.post("/submitkeyword", articleController.submitSearchKeyword);
-router.post("/postbookmark", articleController.addBookMark);
-router.get("/getbookmark", articleController.getBookMark);
-router.post("/removebookmark", articleController.removeBookMark);
-router.post("/editarticle", articleController.editArticle);
-router.post("/deletearticle", articleController.deleteArticle);
-router.get("/userarticlelist", articleController.getUserArticleList);
-router.post("/addarticletrend", articleController.postArticleTrend);
-router.post("/increaseview", articleController.increaseArticleView);
-router.get("/getarticletrend", articleController.getArticleTrend);
+router.get("/articlelist", auth, articleController.getArticleList);
+router.get("/articlemain", auth, articleController.getArticleMain);
+router.post("/postarticle", auth, articleController.postArticle);
+router.post("/addlabels", auth, articleController.addArticleLabel);
+router.post("/submitkeyword", auth, articleController.submitSearchKeyword);
+router.post("/postbookmark", auth, articleController.addBookMark);
+router.get("/getbookmark", auth, articleController.getBookMark);
+router.post("/removebookmark", auth, articleController.removeBookMark);
+router.post("/editarticle", auth, articleController.editArticle);
+router.post("/deletearticle", auth, articleController.deleteArticle);
+router.get("/userarticlelist", auth, articleController.getUserArticleList);
+router.post("/addarticletrend", auth, articleController.postArticleTrend);
+router.post("/increaseview", auth, articleController.increaseArticleView);
+router.get("/getarticletrend", auth, articleController.getArticleTrend);
 
-// 将路由对象共享出去
 export default router;

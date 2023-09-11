@@ -9,7 +9,6 @@ interface UnifiedResponseBodyParams {
   result?: object;
   res: Response;
 }
-
 interface ErrorHandlerParams {
   error: any;
   httpStatus?: number;
@@ -95,4 +94,15 @@ export const paramsErrorHandler = (result: object, res: Response) => {
     result,
     res,
   });
+};
+
+// 获取文章详情中的图片链接
+export const getImgSrc = (htmlstr: string) => {
+  const reg = /<img.+?src=('|")?([^'"]+)('|")?(?:\s+|>)/gim;
+  const arr = [];
+  let tem;
+  while ((tem = reg.exec(htmlstr))) {
+    arr.push(tem[2]);
+  }
+  return arr;
 };

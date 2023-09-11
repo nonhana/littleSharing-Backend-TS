@@ -1,18 +1,20 @@
 import express from "express";
-const router = express.Router();
-import userHandler from "../controller/user";
+import { userController } from "../controller/user";
+import { auth } from "../middleware/user.middleware";
 
-router.post("/register", userHandler.regUser);
-router.get("/login", userHandler.login);
-router.get("/userinfo", userHandler.getUserInfo);
-router.post("/edituserinfo", userHandler.editUserInfo);
-router.get("/getlikenum", userHandler.getUserLikeNum);
-router.get("/getcollectionnum", userHandler.getUserCollectionNum);
-router.get("/getlikedarticles", userHandler.getUserAddLike);
-router.get("/getcollectedarticles", userHandler.getUserAddCollection);
-router.post("/focususeractions", userHandler.focusUserActions);
-router.get("/getuserfocuslist", userHandler.getUserFocusList);
-router.get("/getuserfanslist", userHandler.getUserFansList);
-router.get("/getuserarticletags", userHandler.getUserArticleTags);
+const router = express.Router();
+
+router.post("/register", userController.register);
+router.get("/login", userController.login);
+router.get("/getuserinfo", auth, userController.getUserInfo);
+router.post("/edituserinfo", auth, userController.editUserInfo);
+router.get("/getuserlikenum", auth, userController.getUserLikeNum);
+router.get("/getusercollectionnum", auth, userController.getUserCollectionNum);
+router.get("/getlikedarticles", auth, userController.getLikedArticles);
+router.get("/getcollectedarticles", auth, userController.getCollectedArticles);
+router.post("/focususeractions", auth, userController.focusUserActions);
+router.get("/getuserfocuslist", auth, userController.getUserFocusList);
+router.get("/getuserfanslist", auth, userController.getUserFansList);
+router.get("/getuserarticletags", auth, userController.getUserArticleTags);
 
 export default router;
