@@ -2,7 +2,6 @@ import express from "express";
 import { otherController } from "../controller/other";
 import { auth } from "../middleware/user.middleware";
 import multer from "multer";
-import path from "path";
 
 const router = express.Router();
 
@@ -15,9 +14,9 @@ const imgUpload = multer({
     filename(_, file, cb) {
       cb(
         null,
-        `${Date.now()}_${Math.floor(Math.random() * 1e9)}${path.extname(
-          file.originalname
-        )}`
+        `${Date.now()}_${Math.floor(Math.random() * 1e9)}.${
+          file.mimetype.split("/")[1]
+        }`
       );
     },
   }),
