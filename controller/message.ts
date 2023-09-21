@@ -4,7 +4,7 @@ import {
   unifiedResponseBody,
   errorHandler,
 } from "../utils/index";
-import type { MessageLike } from "../daos/message";
+import type { MessageLike } from "../types/message";
 
 class MessageController {
   // 查找某用户的点赞消息列表
@@ -44,15 +44,14 @@ class MessageController {
 
       unifiedResponseBody({
         result_msg: "获取点赞消息列表成功",
-        result: {
-          message_list: likeMessageList,
-        },
+        result: likeMessageList,
         res,
       });
     } catch (error) {
       errorHandler({
         error,
         result_msg: "获取点赞消息列表失败",
+        result: { error },
         res,
       });
     }
@@ -72,6 +71,7 @@ class MessageController {
       errorHandler({
         error,
         result_msg: "发送点赞消息失败",
+        result: { error },
         res,
       });
     }

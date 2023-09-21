@@ -4,16 +4,56 @@ import {
   unifiedResponseBody,
   errorHandler,
 } from "../utils/index";
+import type { AuthenticatedRequest } from "../middleware/user.middleware";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
 
 class UserController {
+  // 上传头像
+  uploadAvatar = (req: Request, res: Response) => {
+    if (!req.file) {
+      unifiedResponseBody({
+        httpStatus: 400,
+        result_code: 1,
+        result_msg: "未检测到上传文件",
+        res,
+      });
+      return;
+    }
+    const imgPath = `${process.env.AVATAR_PATH}/${req.file.filename}`;
+    unifiedResponseBody({
+      result_msg: "上传图片成功",
+      result: imgPath,
+      res,
+    });
+  };
+
+  // 上传背景
+  uploadBackground = (req: Request, res: Response) => {
+    if (!req.file) {
+      unifiedResponseBody({
+        httpStatus: 400,
+        result_code: 1,
+        result_msg: "未检测到上传文件",
+        res,
+      });
+      return;
+    }
+    const imgPath = `${process.env.BACKGROUND_PATH}/${req.file.filename}`;
+    unifiedResponseBody({
+      result_msg: "上传图片成功",
+      result: imgPath,
+      res,
+    });
+  };
+
   // 注册的处理函数
   register = async (req: Request, res: Response) => {
+    // 1.接收表单数据(此处的userinfo含有三个属性:name,account,password)
+    const { name, account, password } = req.body;
     try {
-      // 1.接收表单数据(此处的userinfo含有三个属性:name,account,password)
-      const { name, account, password } = req.body;
-
       // 2.定义sql语句，查找该账号是否被占用
       const retrieveRes = await queryPromise(
         "select * from users where account=?",
@@ -22,7 +62,7 @@ class UserController {
       if (retrieveRes.length > 0) {
         unifiedResponseBody({
           result_code: 1,
-          result_msg: "this account has been occupied",
+          result_msg: "该账号已被注册",
           res,
         });
         return;
@@ -42,20 +82,26 @@ class UserController {
       // 5.返回成功响应
       unifiedResponseBody({
         result_code: 0,
-        result_msg: "register succeed",
+        result_msg: "注册成功",
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "注册失败", res });
+      errorHandler({
+        error,
+        result_msg: "注册失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
   // 登录的处理函数
   login = async (req: Request, res: Response) => {
+    // 1. 获取登录时提交的数据
+    const { account, password } = req.body;
     try {
-      // 1. 获取登录时提交的数据
-      const { account, password } = req.query;
-
       // 2. 在数据库中查询用户所提交的账号
       const retrieveRes = await queryPromise(
         "select * from users where account=?",
@@ -63,7 +109,7 @@ class UserController {
       );
 
       const compareRes = bcryptjs.compareSync(
-        password as string,
+        password,
         retrieveRes[0].password
       );
 
@@ -75,64 +121,106 @@ class UserController {
         });
         return;
       } else {
-        // 如果输入正确，则生成 JWT token 字符串返回给客户端
-        // 先剔除除了id和account以外的任何值
-        const user = {
-          ...retrieveRes[0],
-          password: "",
-          name: "",
-          major: "",
-          university: "",
-          headphoto: "",
-          backgroundphoto: "",
-          signature: "",
-          introduce: "",
-        };
-        const token = jwt.sign(user, "littleSharing", { expiresIn: "24h" });
+        const {
+          password,
+          name,
+          major,
+          university,
+          headphoto,
+          backgroundphoto,
+          signature,
+          introduce,
+          ...user
+        } = retrieveRes[0];
 
-        // 获取该用户的keywords
-        const keyword_results = await queryPromise(
-          "select keywords_name,keywords_count from keywords where user_id=?",
-          user.id
-        );
-        // 获取全局的article_labels
-        const label_results = await queryPromise(
-          "select label_name as label from article_labels"
-        );
-        label_results.forEach((item: any) => {
-          item.value = item.label;
+        const token = jwt.sign(user, process.env.JWT_SECRET!, {
+          expiresIn: "24h",
         });
+
         unifiedResponseBody({
           result_code: 0,
-          result_msg: "login succeed",
-          result: {
-            token,
-            keywords_list: keyword_results,
-            article_labels: label_results,
-            user_info: { ...retrieveRes[0], password: null },
-          },
+          result_msg: "登录成功",
+          result: token,
           res,
         });
       }
     } catch (error) {
-      errorHandler({ error, result_msg: "登录失败", res });
+      errorHandler({
+        error,
+        result_msg: "登录失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
-  // 根据user_id获取某个具体登录用户的信息
-  getUserInfo = async (req: Request, res: Response) => {
-    const { user_id: origin_user_id } = req.query;
+  // 获取用户的keywords
+  getUserKeywords = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // 获取该用户的keywords
+      const keywords = await queryPromise(
+        "select keywords_name, keywords_count from keywords where user_id = ?",
+        req.state!.userInfo.user_id
+      );
+      unifiedResponseBody({
+        result_msg: "获取用户keywords成功",
+        result: keywords,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "获取用户keywords失败",
+        result: {
+          error,
+        },
+        res,
+      });
+    }
+  };
+
+  // 获取用户的article_labels
+  getUserArticleLabels = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // 获取全局的article_labels
+      const labels = await queryPromise(
+        "select label_name as label from article_labels"
+      );
+      labels.forEach((item: any) => {
+        item.value = item.label;
+      });
+      unifiedResponseBody({
+        result_msg: "获取文章标签列表成功",
+        result: labels,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "获取文章标签列表失败",
+        result: { error },
+        res,
+      });
+    }
+  };
+
+  // 获取用户的信息
+  getUserInfo = async (req: AuthenticatedRequest, res: Response) => {
+    const { user_id } = req.query;
     try {
       let retrieveRes = null;
-      if (origin_user_id) {
+      // 有id，通过id获取；无id，通过解析token获取
+      if (user_id) {
         retrieveRes = await queryPromise(
           "select * from users where id=?",
-          origin_user_id
+          user_id
         );
       } else {
         retrieveRes = await queryPromise(
           "select * from users where id=?",
-          (<any>req).state.userInfo.user_id
+          req.state!.userInfo.user_id
         );
       }
 
@@ -140,11 +228,18 @@ class UserController {
 
       unifiedResponseBody({
         result_msg: "获取用户信息成功",
-        result: { userInfo },
+        result: userInfo,
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "获取用户信息失败", res });
+      errorHandler({
+        error,
+        result_msg: "获取用户信息失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -154,7 +249,7 @@ class UserController {
     try {
       const newMajor = newUserInfo.major.join(",");
       await queryPromise(
-        "update users set name=?,major=?,university=?,headphoto=?,backgroundphoto=?,signature=?,introduce=? where id=?",
+        "update users set name = ?, major = ?, university = ?, headphoto = ?, backgroundphoto = ?, signature = ?, introduce = ? where id = ?",
         [
           newUserInfo.name,
           newMajor,
@@ -171,7 +266,14 @@ class UserController {
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "更新用户信息失败", res });
+      errorHandler({
+        error,
+        result_msg: "更新用户信息失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -180,7 +282,7 @@ class UserController {
     const { user_id } = req.query;
     try {
       const retrieveRes = await queryPromise(
-        "select like_num from articles where author_id=?",
+        "select like_num from articles where author_id = ?",
         user_id
       );
       let total_like_num = 0;
@@ -189,11 +291,18 @@ class UserController {
       });
       unifiedResponseBody({
         result_msg: "获取用户点赞数成功",
-        result: { like_num: total_like_num },
+        result: total_like_num,
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "获取用户点赞数失败", res });
+      errorHandler({
+        error,
+        result_msg: "获取用户点赞数失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -202,7 +311,7 @@ class UserController {
     const { user_id } = req.query;
     try {
       const retrieveRes = await queryPromise(
-        "select collection_num from articles where author_id=?",
+        "select collection_num from articles where author_id = ?",
         user_id
       );
       let total_collection_num = 0;
@@ -211,11 +320,18 @@ class UserController {
       });
       unifiedResponseBody({
         result_msg: "获取用户收藏数成功",
-        result: { collection_num: total_collection_num },
+        result: total_collection_num,
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "获取用户收藏数失败", res });
+      errorHandler({
+        error,
+        result_msg: "获取用户收藏数失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -229,11 +345,18 @@ class UserController {
       );
       unifiedResponseBody({
         result_msg: "获取用户点赞文章成功",
-        result: { liked_articles: retrieveRes },
+        result: retrieveRes,
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "获取用户点赞文章失败", res });
+      errorHandler({
+        error,
+        result_msg: "获取用户点赞文章失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -247,11 +370,18 @@ class UserController {
       );
       unifiedResponseBody({
         result_msg: "获取用户收藏文章成功",
-        result: { collected_articles: retrieveRes },
+        result: retrieveRes,
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "获取用户收藏文章失败", res });
+      errorHandler({
+        error,
+        result_msg: "获取用户收藏文章失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -276,7 +406,14 @@ class UserController {
         });
       }
     } catch (error) {
-      errorHandler({ error, result_msg: "关注操作失败", res });
+      errorHandler({
+        error,
+        result_msg: "关注操作失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -290,11 +427,18 @@ class UserController {
       );
       unifiedResponseBody({
         result_msg: "获取用户关注列表成功",
-        result: { focus_list: retrieveRes },
+        result: retrieveRes,
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "获取用户关注列表失败", res });
+      errorHandler({
+        error,
+        result_msg: "获取用户关注列表失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -303,16 +447,23 @@ class UserController {
     const { user_id } = req.query;
     try {
       const retrieveRes = await queryPromise(
-        "select * from user_foc----us where second_user_id = ?",
+        "select * from user_focus where second_user_id = ?",
         user_id
       );
       unifiedResponseBody({
         result_msg: "获取用户粉丝列表成功",
-        result: { fans_list: retrieveRes },
+        result: retrieveRes,
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "获取用户粉丝列表失败", res });
+      errorHandler({
+        error,
+        result_msg: "获取用户粉丝列表失败",
+        result: {
+          error,
+        },
+        res,
+      });
     }
   };
 
@@ -354,11 +505,188 @@ class UserController {
       }));
       unifiedResponseBody({
         result_msg: "获取用户文章标签列表成功",
-        result: { article_tags: resultArray },
+        result: resultArray,
         res,
       });
     } catch (error) {
-      errorHandler({ error, result_msg: "获取用户文章标签列表失败", res });
+      errorHandler({
+        error,
+        result_msg: "获取用户文章标签列表失败",
+        result: {
+          error,
+        },
+        res,
+      });
+    }
+  };
+
+  // 用户点赞的处理函数
+  addLike = async (req: Request, res: Response) => {
+    const { action_type, ...like_action } = req.body;
+    try {
+      if (action_type === 0) {
+        const retrieveRes = await queryPromise(
+          "select article_id from article_like where user_id=?",
+          like_action.user_id
+        );
+
+        if (
+          retrieveRes.some(
+            (item: any) => item.article_id === like_action.article_id
+          )
+        ) {
+          unifiedResponseBody({
+            result_msg: "已经点赞过该文章",
+            res,
+          });
+          return;
+        }
+
+        await queryPromise("insert into article_like set ?", like_action);
+
+        unifiedResponseBody({
+          result_msg: "点赞成功",
+          res,
+        });
+      } else if (action_type === 1) {
+        await queryPromise(
+          "delete from article_like where article_id=? and user_id=?",
+          [like_action.article_id, like_action.user_id]
+        );
+        unifiedResponseBody({
+          result_msg: "取消点赞成功",
+          res,
+        });
+      } else {
+        unifiedResponseBody({
+          httpStatus: 400,
+          result_code: 1,
+          result_msg: "非法的操作符",
+          res,
+        });
+      }
+    } catch (error) {
+      errorHandler({
+        error,
+        res,
+        result: {
+          error,
+        },
+        result_msg: "点赞失败",
+      });
+    }
+  };
+
+  // 获取用户的点赞列表
+  getUserLikeList = async (req: Request, res: Response) => {
+    const { user_id } = req.query;
+    try {
+      const retrieveRes = await queryPromise(
+        "select article_id from article_like where user_id=?",
+        user_id
+      );
+
+      const like_list = retrieveRes.map((item: any) => item.article_id);
+
+      unifiedResponseBody({
+        result_msg: "获取点赞列表成功",
+        result: like_list,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        res,
+        result: {
+          error,
+        },
+        result_msg: "获取点赞列表失败",
+      });
+    }
+  };
+
+  // 用户收藏的处理函数
+  addCollect = async (req: Request, res: Response) => {
+    const { action_type, ...collect_action } = req.body;
+    try {
+      if (action_type === 0) {
+        const retrieveRes = await queryPromise(
+          "select article_id from article_collect where user_id=?",
+          collect_action.user_id
+        );
+
+        if (
+          retrieveRes.some(
+            (item: any) => item.article_id === collect_action.article_id
+          )
+        ) {
+          unifiedResponseBody({
+            result_msg: "已经收藏过该文章",
+            res,
+          });
+          return;
+        }
+
+        await queryPromise("insert into article_collect set ?", collect_action);
+
+        unifiedResponseBody({
+          result_msg: "收藏成功",
+          res,
+        });
+      } else if (action_type === 1) {
+        await queryPromise(
+          "delete from article_collect where article_id=? and user_id=?",
+          [collect_action.article_id, collect_action.user_id]
+        );
+        unifiedResponseBody({
+          result_msg: "取消收藏成功",
+          res,
+        });
+      } else {
+        unifiedResponseBody({
+          httpStatus: 400,
+          result_code: 1,
+          result_msg: "非法操作符",
+          res,
+        });
+      }
+    } catch (error) {
+      errorHandler({
+        error,
+        res,
+        result: {
+          error,
+        },
+        result_msg: "收藏失败",
+      });
+    }
+  };
+
+  // 获取用户的收藏列表
+  getUserCollectList = async (req: Request, res: Response) => {
+    const { user_id } = req.query;
+    try {
+      const retrieveRes = await queryPromise(
+        "select article_id from article_collect where user_id=?",
+        user_id
+      );
+
+      const collect_list = retrieveRes.map((item: any) => item.article_id);
+
+      unifiedResponseBody({
+        result_msg: "获取收藏列表成功",
+        result: collect_list,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        res,
+        result: {
+          error,
+        },
+        result_msg: "获取收藏列表失败",
+      });
     }
   };
 }

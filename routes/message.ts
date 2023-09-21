@@ -3,7 +3,7 @@ import { messageController } from "../controller/message";
 
 const router = express.Router();
 
-router.get("/likelist", messageController.getMessageLikeList);
-router.post("/sendlike", messageController.sendMessageLike);
+router.post("/send-like", messageController.sendMessageLike);
+router.get("/get-like-list", messageController.getMessageLikeList);
 
 export default router;

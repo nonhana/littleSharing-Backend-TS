@@ -4,7 +4,9 @@ import {
   unifiedResponseBody,
   errorHandler,
   getImgSrc,
+  shuffle,
 } from "../utils/index";
+import type { AuthenticatedRequest } from "../middleware/user.middleware";
 import type {
   ArticleBasicInfo,
   UserInfo,
@@ -12,9 +14,33 @@ import type {
   UserKeyword,
   Bookmark,
   Trend,
-} from "../daos/articles";
+} from "../types/articles";
+import { months } from "../constant";
+import dotenv from "dotenv";
+dotenv.config();
 
 class ArticleController {
+  // 上传文章图片
+  uploadArticleImg = (req: Request, res: Response) => {
+    if (!req.file) {
+      unifiedResponseBody({
+        httpStatus: 400,
+        result_code: 1,
+        result_msg: "未检测到上传文件",
+        res,
+      });
+      return;
+    }
+    const imgPath = `${process.env.ARTICLE_IMG_PATH}/${req.file.filename}`;
+    unifiedResponseBody({
+      result_msg: "上传图片成功",
+      result: {
+        imgURL: imgPath,
+      },
+      res,
+    });
+  };
+
   // 获取文章列表的处理函数
   getArticleList = async (_: Request, res: Response) => {
     try {
@@ -61,12 +87,13 @@ class ArticleController {
       unifiedResponseBody({
         res,
         result_msg: "获取文章列表成功",
-        result: { articleList },
+        result: shuffle(articleList),
       });
     } catch (error) {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "获取文章列表失败",
       });
     }
@@ -91,12 +118,13 @@ class ArticleController {
       unifiedResponseBody({
         res,
         result_msg: "获取文章内容成功",
-        result: { article_main },
+        result: article_main,
       });
     } catch (error) {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "获取文章内容失败",
       });
     }
@@ -120,6 +148,7 @@ class ArticleController {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "上传文章失败",
       });
     }
@@ -145,6 +174,7 @@ class ArticleController {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "编辑文章失败",
       });
     }
@@ -154,7 +184,10 @@ class ArticleController {
   deleteArticle = async (req: Request, res: Response) => {
     const { article_id } = req.body;
     try {
-      await queryPromise("delete from articles where article_id=?", article_id);
+      await queryPromise(
+        "delete from articles where article_id = ?",
+        article_id
+      );
       unifiedResponseBody({
         res,
         result_msg: "删除文章成功",
@@ -163,6 +196,7 @@ class ArticleController {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "删除文章失败",
       });
     }
@@ -181,51 +215,51 @@ class ArticleController {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "新增文章标签失败",
       });
     }
   };
 
   // 搜索时将搜索关键词提交给数据库后台并做记录
-  submitSearchKeyword = async (req: Request, res: Response) => {
-    const { keyword: origin_keyword, user_id } = req.body;
+  submitSearchKeyword = async (req: AuthenticatedRequest, res: Response) => {
+    const { keyword: origin_keyword } = req.body;
     try {
       const keyword = origin_keyword.toLowerCase();
       const retrieveRes = (await queryPromise(
-        "SELECT * FROM keywords WHERE user_id=?",
-        user_id
+        "SELECT * FROM keywords WHERE user_id = ?",
+        req.state!.userInfo.user_id
       )) as UserKeyword[];
 
       let flag = false;
       for (const item of retrieveRes) {
         if (item.keywords_name === keyword) {
           flag = true;
-          const sql_UpdateKeywordCount =
-            "INSERT INTO keywords (keywords_name, keywords_count, user_id) VALUES (?, 1, ?) " +
-            "ON DUPLICATE KEY UPDATE keywords_count = keywords_count + 1";
-          await queryPromise(sql_UpdateKeywordCount, [keyword, user_id]);
+          await queryPromise(
+            "INSERT INTO keywords (keywords_name, keywords_count, user_id) VALUES (?, 1, ?) ON DUPLICATE KEY UPDATE keywords_count = keywords_count + 1",
+            [keyword, req.state!.userInfo.user_id]
+          );
           break;
         }
       }
-
       if (!flag) {
         const insertNewKeyword = {
           keywords_name: keyword,
           keywords_count: 1,
-          user_id: user_id,
+          user_id: req.state!.userInfo.user_id,
         };
-        const sql_InsertNewKeyword = "INSERT INTO keywords SET ?";
-        await queryPromise(sql_InsertNewKeyword, insertNewKeyword);
+        await queryPromise("INSERT INTO keywords SET ?", insertNewKeyword);
       }
       unifiedResponseBody({
-        res,
         result_msg: "上传关键词成功",
+        res,
       });
     } catch (error) {
       errorHandler({
-        res,
         error,
         result_msg: "上传关键词失败",
+        result: { error },
+        res,
       });
     }
   };
@@ -237,8 +271,8 @@ class ArticleController {
       const user_id = new_bookmark.user_id;
 
       const bookmarks = (await queryPromise(
-        "SELECT * FROM article_bookmarks WHERE user_id=?",
-        [user_id]
+        "SELECT * FROM article_bookmarks WHERE user_id = ?",
+        user_id
       )) as Bookmark[];
 
       let flag = false;
@@ -248,20 +282,20 @@ class ArticleController {
           item.user_id === new_bookmark.user_id
         ) {
           flag = true;
-          const sql_UpdateBookMark =
-            "UPDATE article_bookmarks SET topHeight=? WHERE article_id=? AND user_id=?";
-          await queryPromise(sql_UpdateBookMark, [
-            new_bookmark.topHeight,
-            new_bookmark.article_id,
-            new_bookmark.user_id,
-          ]);
+          await queryPromise(
+            "UPDATE article_bookmarks SET topHeight = ? WHERE article_id = ? AND user_id = ?",
+            [
+              new_bookmark.topHeight,
+              new_bookmark.article_id,
+              new_bookmark.user_id,
+            ]
+          );
           break;
         }
       }
 
       if (!flag) {
-        const sql_AddBookMark = "INSERT INTO article_bookmarks SET ?";
-        await queryPromise(sql_AddBookMark, new_bookmark);
+        await queryPromise("INSERT INTO article_bookmarks SET ?", new_bookmark);
       }
       unifiedResponseBody({
         res,
@@ -271,6 +305,7 @@ class ArticleController {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "新增/更新书签失败",
       });
     }
@@ -281,18 +316,19 @@ class ArticleController {
     const { user_id } = req.query;
     try {
       const retrieveRes = await queryPromise(
-        "select * from article_bookmarks where user_id=?",
+        "select * from article_bookmarks where user_id = ?",
         user_id
       );
       unifiedResponseBody({
         res,
         result_msg: "获取书签成功",
-        result: { retrieveRes },
+        result: retrieveRes,
       });
     } catch (error) {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "获取书签失败",
       });
     }
@@ -300,21 +336,22 @@ class ArticleController {
 
   // 移除用户添加的标签
   removeBookMark = async (req: Request, res: Response) => {
-    const bookmark_info = req.body;
+    const { article_id, user_id } = req.body;
     try {
       await queryPromise(
-        "delete from article_bookmarks where article_id=? and user_id=?",
-        [bookmark_info.article_id, bookmark_info.user_id]
+        "delete from article_bookmarks where article_id = ? and user_id = ?",
+        [article_id, user_id]
       );
       unifiedResponseBody({
-        res,
         result_msg: "移除书签成功",
+        res,
       });
     } catch (error) {
       errorHandler({
-        res,
         error,
         result_msg: "移除书签失败",
+        result: { error },
+        res,
       });
     }
   };
@@ -337,35 +374,22 @@ class ArticleController {
         return article_item;
       });
       unifiedResponseBody({
-        res,
         result_msg: "获取用户文章列表成功",
-        result: { user_article_list },
+        result: user_article_list,
+        res,
       });
     } catch (error) {
       errorHandler({
-        res,
         error,
         result_msg: "获取用户文章列表失败",
+        result: { error },
+        res,
       });
     }
   };
 
   // 提交浏览趋势的处理函数
   postArticleTrend = async (req: Request, res: Response) => {
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
     const { present_date, label_list } = req.body;
     const month = months[Number(present_date.slice(5, 7)) - 1];
     try {
@@ -374,16 +398,20 @@ class ArticleController {
           "SELECT * FROM scan_trend WHERE trend_name = ?",
           item
         )) as Trend[];
+
         if (retrieveRes.length === 0) {
-          const sql_PostArticleTrend = `INSERT INTO scan_trend (trend_name, ${month}) VALUES (?, 1)`;
-          await queryPromise(sql_PostArticleTrend, item);
+          await queryPromise(
+            `INSERT INTO scan_trend (trend_name, ${month}) VALUES (?, 1)`,
+            item
+          );
         } else {
-          const sql_UpdateTrend = `UPDATE scan_trend SET ${month} = ${month} + 1 WHERE trend_name = ?`;
-          await queryPromise(sql_UpdateTrend, item);
+          await queryPromise(
+            `UPDATE scan_trend SET ${month} = ${month} + 1 WHERE trend_name = ?`,
+            item
+          );
         }
       };
 
-      // Promise.all接收一个全是Promise的数组，等待所有的Promise解析完成
       await Promise.all(label_list.map((item: string) => addTrend(item)));
       unifiedResponseBody({
         res,
@@ -393,6 +421,7 @@ class ArticleController {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "提交浏览趋势失败",
       });
     }
@@ -412,9 +441,10 @@ class ArticleController {
       });
     } catch (error) {
       errorHandler({
-        res,
         error,
         result_msg: "增加文章浏览量失败",
+        result: { error },
+        res,
       });
     }
   };
@@ -493,12 +523,13 @@ class ArticleController {
       unifiedResponseBody({
         res,
         result_msg: "获取文章趋势成功",
-        result: { topFiveTrends },
+        result: topFiveTrends,
       });
     } catch (error) {
       errorHandler({
         res,
         error,
+        result: { error },
         result_msg: "获取文章趋势失败",
       });
     }

@@ -8,7 +8,7 @@ import bodyParser from "body-parser";
 // 引入路由模块
 import userRouter from "./routes/user";
 import articleRouter from "./routes/article";
-import otherRouter from "./routes/other";
+import commentRouter from "./routes/comment";
 import messageRouter from "./routes/message";
 
 const app = express();
@@ -42,7 +42,7 @@ app.use(express.static("public"));
 app.use("/user", userRouter);
 app.use("/article", articleRouter);
 app.use("/message", messageRouter);
-app.use(otherRouter);
+app.use("/comment", commentRouter);
 
 // 捕捉404并转发到错误处理器
 app.use(function (_, __, next) {

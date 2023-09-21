@@ -1,9 +1,11 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import { unifiedResponseBody, errorHandler } from "../utils/index";
+import dotenv from "dotenv";
+dotenv.config();
 
 // 将 Request 接口扩展，增加 state 属性，存储用户信息
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   state?: {
     userInfo?: any;
   };
@@ -34,7 +36,7 @@ export const auth = async (
   // 如果前端发的请求带了 token，就验证 token，将用户信息存储到 state 中
   try {
     req.state = {};
-    req.state.userInfo = jwt.verify(token, "littleSharing");
+    req.state.userInfo = jwt.verify(token, process.env.JWT_SECRET!);
   } catch (error: any) {
     if (error.name === "TokenExpiredError") {
       errorHandler({

@@ -6,7 +6,7 @@ interface UnifiedResponseBodyParams {
   httpStatus?: number;
   result_code?: 0 | 1; // 0-成功, 1-失败
   result_msg: string;
-  result?: object;
+  result?: any;
   res: Response;
 }
 interface ErrorHandlerParams {
@@ -104,5 +104,26 @@ export const getImgSrc = (htmlstr: string) => {
   while ((tem = reg.exec(htmlstr))) {
     arr.push(tem[2]);
   }
+  return arr;
+};
+
+// 打乱数组
+export const shuffle = (arr: any[]) => {
+  let currentIndex = arr.length,
+    randomIndex;
+
+  // 当还剩有元素未洗牌时
+  while (currentIndex !== 0) {
+    // 选取剩余元素中的一个随机索引
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // 交换当前元素与随机选取的元素
+    [arr[currentIndex], arr[randomIndex]] = [
+      arr[randomIndex],
+      arr[currentIndex],
+    ];
+  }
+
   return arr;
 };
