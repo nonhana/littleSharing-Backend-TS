@@ -4,6 +4,7 @@ import {
   unifiedResponseBody,
   errorHandler,
 } from "../utils/index";
+import type { AuthenticatedRequest } from "../middleware/user.middleware";
 
 class CommentController {
   // 获取评论列表
@@ -135,12 +136,15 @@ class CommentController {
   };
 
   // 评论点赞相关操作
-  commentLikeAction = async (req: Request, res: Response) => {
-    const { action_type, ...like_info } = req.body;
+  commentLikeAction = async (req: AuthenticatedRequest, res: Response) => {
+    const { comment_id, action_type } = req.body;
     try {
       if (action_type === 0) {
         // 添加评论点赞
-        await queryPromise("insert into comment_like set ?", like_info);
+        await queryPromise("insert into comment_like set ?", {
+          comment_id,
+          user_id: req.state!.userInfo.user_id,
+        });
         unifiedResponseBody({
           result_msg: "评论点赞成功",
           res,
@@ -148,8 +152,8 @@ class CommentController {
       } else if (action_type === 1) {
         // 删除评论点赞
         await queryPromise(
-          "delete from comment_like where comment_id=? and user_id=?",
-          [like_info.comment_id, like_info.user_id]
+          "delete from comment_like where comment_id = ? and user_id = ?",
+          [comment_id, req.state!.userInfo.user_id]
         );
         unifiedResponseBody({
           result_msg: "删除评论点赞成功",
@@ -174,12 +178,11 @@ class CommentController {
   };
 
   // 获取用户的评论点赞列表
-  getCommentLikeList = (req: Request, res: Response) => {
-    const { user_id } = req.query;
+  getCommentLikeList = (req: AuthenticatedRequest, res: Response) => {
     try {
       const retrieveRes = queryPromise(
-        "select comment_id from comment_like where user_id=?",
-        user_id
+        "select comment_id from comment_like where user_id = ?",
+        req.state!.userInfo.user_id
       );
 
       unifiedResponseBody({

@@ -265,37 +265,35 @@ class ArticleController {
   };
 
   // 当用户在文章详情页进行书签的添加时，将该书签信息存入数据库
-  addBookMark = async (req: Request, res: Response) => {
-    const new_bookmark = req.body;
+  addBookMark = async (req: AuthenticatedRequest, res: Response) => {
+    const { article_id, topHeight } = req.body;
     try {
-      const user_id = new_bookmark.user_id;
-
       const bookmarks = (await queryPromise(
         "SELECT * FROM article_bookmarks WHERE user_id = ?",
-        user_id
+        req.state!.userInfo.user_id
       )) as Bookmark[];
 
       let flag = false;
       for (const item of bookmarks) {
         if (
-          item.article_id === new_bookmark.article_id &&
-          item.user_id === new_bookmark.user_id
+          item.article_id === article_id &&
+          item.user_id === req.state!.userInfo.user_id
         ) {
           flag = true;
           await queryPromise(
             "UPDATE article_bookmarks SET topHeight = ? WHERE article_id = ? AND user_id = ?",
-            [
-              new_bookmark.topHeight,
-              new_bookmark.article_id,
-              new_bookmark.user_id,
-            ]
+            [topHeight, article_id, req.state!.userInfo.user_id]
           );
           break;
         }
       }
 
       if (!flag) {
-        await queryPromise("INSERT INTO article_bookmarks SET ?", new_bookmark);
+        await queryPromise("INSERT INTO article_bookmarks SET ?", {
+          article_id,
+          topHeight,
+          user_id: req.state!.userInfo.user_id,
+        });
       }
       unifiedResponseBody({
         res,
@@ -311,13 +309,12 @@ class ArticleController {
     }
   };
 
-  //获取指定用户的文章书签
-  getBookMark = async (req: Request, res: Response) => {
-    const { user_id } = req.query;
+  //获取文章书签
+  getBookMark = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const retrieveRes = await queryPromise(
         "select * from article_bookmarks where user_id = ?",
-        user_id
+        req.state!.userInfo.user_id
       );
       unifiedResponseBody({
         res,
@@ -334,13 +331,13 @@ class ArticleController {
     }
   };
 
-  // 移除用户添加的标签
-  removeBookMark = async (req: Request, res: Response) => {
-    const { article_id, user_id } = req.body;
+  // 删除书签
+  removeBookMark = async (req: AuthenticatedRequest, res: Response) => {
+    const { article_id } = req.body;
     try {
       await queryPromise(
         "delete from article_bookmarks where article_id = ? and user_id = ?",
-        [article_id, user_id]
+        [article_id, req.state!.userInfo.user_id]
       );
       unifiedResponseBody({
         result_msg: "移除书签成功",

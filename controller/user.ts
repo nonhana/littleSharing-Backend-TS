@@ -336,12 +336,11 @@ class UserController {
   };
 
   // 获取用户的被点赞文章数据
-  getLikedArticles = async (req: Request, res: Response) => {
-    const { user_id: author_id } = req.query;
+  getLikedArticles = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const retrieveRes = await queryPromise(
         "select * from article_like where article_id in (select article_id from articles where author_id = ? )",
-        author_id
+        req.state!.userInfo.user_id
       );
       unifiedResponseBody({
         result_msg: "获取用户点赞文章成功",
@@ -361,12 +360,11 @@ class UserController {
   };
 
   // 获取用户的被收藏文章数据
-  getCollectedArticles = async (req: Request, res: Response) => {
-    const { user_id: author_id } = req.query;
+  getCollectedArticles = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const retrieveRes = await queryPromise(
         "select * from article_collect where article_id in (select article_id from articles where author_id = ?)",
-        author_id
+        req.state!.userInfo.user_id
       );
       unifiedResponseBody({
         result_msg: "获取用户收藏文章成功",
@@ -521,20 +519,16 @@ class UserController {
   };
 
   // 用户点赞的处理函数
-  addLike = async (req: Request, res: Response) => {
-    const { action_type, ...like_action } = req.body;
+  addLike = async (req: AuthenticatedRequest, res: Response) => {
+    const { article_id, action_type } = req.body;
     try {
       if (action_type === 0) {
         const retrieveRes = await queryPromise(
-          "select article_id from article_like where user_id=?",
-          like_action.user_id
+          "select article_id from article_like where user_id = ?",
+          req.state!.userInfo.user_id
         );
 
-        if (
-          retrieveRes.some(
-            (item: any) => item.article_id === like_action.article_id
-          )
-        ) {
+        if (retrieveRes.some((item: any) => item.article_id === article_id)) {
           unifiedResponseBody({
             result_msg: "已经点赞过该文章",
             res,
@@ -542,7 +536,10 @@ class UserController {
           return;
         }
 
-        await queryPromise("insert into article_like set ?", like_action);
+        await queryPromise("insert into article_like set ?", {
+          article_id,
+          user_id: req.state!.userInfo.user_id,
+        });
 
         unifiedResponseBody({
           result_msg: "点赞成功",
@@ -550,8 +547,8 @@ class UserController {
         });
       } else if (action_type === 1) {
         await queryPromise(
-          "delete from article_like where article_id=? and user_id=?",
-          [like_action.article_id, like_action.user_id]
+          "delete from article_like where article_id = ? and user_id = ?",
+          [article_id, req.state!.userInfo.user_id]
         );
         unifiedResponseBody({
           result_msg: "取消点赞成功",
@@ -578,12 +575,11 @@ class UserController {
   };
 
   // 获取用户的点赞列表
-  getUserLikeList = async (req: Request, res: Response) => {
-    const { user_id } = req.query;
+  getUserLikeList = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const retrieveRes = await queryPromise(
         "select article_id from article_like where user_id=?",
-        user_id
+        req.state!.userInfo.user_id
       );
 
       const like_list = retrieveRes.map((item: any) => item.article_id);
@@ -606,20 +602,16 @@ class UserController {
   };
 
   // 用户收藏的处理函数
-  addCollect = async (req: Request, res: Response) => {
-    const { action_type, ...collect_action } = req.body;
+  addCollect = async (req: AuthenticatedRequest, res: Response) => {
+    const { article_id, action_type } = req.body;
     try {
       if (action_type === 0) {
         const retrieveRes = await queryPromise(
           "select article_id from article_collect where user_id=?",
-          collect_action.user_id
+          req.state!.userInfo.user_id
         );
 
-        if (
-          retrieveRes.some(
-            (item: any) => item.article_id === collect_action.article_id
-          )
-        ) {
+        if (retrieveRes.some((item: any) => item.article_id === article_id)) {
           unifiedResponseBody({
             result_msg: "已经收藏过该文章",
             res,
@@ -627,7 +619,10 @@ class UserController {
           return;
         }
 
-        await queryPromise("insert into article_collect set ?", collect_action);
+        await queryPromise("insert into article_collect set ?", {
+          article_id,
+          user_id: req.state!.userInfo.user_id,
+        });
 
         unifiedResponseBody({
           result_msg: "收藏成功",
@@ -636,7 +631,7 @@ class UserController {
       } else if (action_type === 1) {
         await queryPromise(
           "delete from article_collect where article_id=? and user_id=?",
-          [collect_action.article_id, collect_action.user_id]
+          [article_id, req.state!.userInfo.user_id]
         );
         unifiedResponseBody({
           result_msg: "取消收藏成功",
@@ -663,12 +658,11 @@ class UserController {
   };
 
   // 获取用户的收藏列表
-  getUserCollectList = async (req: Request, res: Response) => {
-    const { user_id } = req.query;
+  getUserCollectList = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const retrieveRes = await queryPromise(
         "select article_id from article_collect where user_id=?",
-        user_id
+        req.state!.userInfo.user_id
       );
 
       const collect_list = retrieveRes.map((item: any) => item.article_id);
