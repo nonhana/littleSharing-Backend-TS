@@ -76,6 +76,8 @@ router.post(
 );
 router.post("/register", userController.register);
 router.post("/login", userController.login);
+router.get("/get-user-keywords", auth, userController.getUserKeywords);
+router.get("/get-article-labels", auth, userController.getArticleLabels);
 router.get("/get-user-info", auth, userController.getUserInfo);
 router.post("/edit-user-info", auth, userController.editUserInfo);
 router.get("/get-user-like-num", auth, userController.getUserLikeNum);

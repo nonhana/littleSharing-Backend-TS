@@ -182,7 +182,7 @@ class UserController {
   };
 
   // 获取用户的article_labels
-  getUserArticleLabels = async (req: AuthenticatedRequest, res: Response) => {
+  getArticleLabels = async (req: AuthenticatedRequest, res: Response) => {
     try {
       // 获取全局的article_labels
       const labels = await queryPromise(
@@ -210,16 +210,18 @@ class UserController {
   getUserInfo = async (req: AuthenticatedRequest, res: Response) => {
     const { user_id } = req.query;
     try {
+      console.log(user_id);
+      console.log(req.state!.userInfo.user_id);
       let retrieveRes = null;
       // 有id，通过id获取；无id，通过解析token获取
       if (user_id) {
         retrieveRes = await queryPromise(
-          "select * from users where id=?",
+          "select * from users where user_id = ?",
           user_id
         );
       } else {
         retrieveRes = await queryPromise(
-          "select * from users where id=?",
+          "select * from users where user_id = ?",
           req.state!.userInfo.user_id
         );
       }
@@ -245,11 +247,11 @@ class UserController {
 
   // 提交更新表单，更新某一用户的用户信息
   editUserInfo = async (req: Request, res: Response) => {
-    const { id, ...newUserInfo } = req.body;
+    const { user_id, ...newUserInfo } = req.body;
     try {
       const newMajor = newUserInfo.major.join(",");
       await queryPromise(
-        "update users set name = ?, major = ?, university = ?, headphoto = ?, backgroundphoto = ?, signature = ?, introduce = ? where id = ?",
+        "update users set name = ?, major = ?, university = ?, headphoto = ?, backgroundphoto = ?, signature = ?, introduce = ? where user_id = ?",
         [
           newUserInfo.name,
           newMajor,
@@ -258,7 +260,7 @@ class UserController {
           newUserInfo.backgroundphoto,
           newUserInfo.signature,
           newUserInfo.introduce,
-          id,
+          user_id,
         ]
       );
       unifiedResponseBody({

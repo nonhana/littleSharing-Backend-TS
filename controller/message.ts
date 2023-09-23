@@ -14,7 +14,7 @@ class MessageController {
       const sql_GetMessageLikeList =
         "SELECT ml.*, u.name AS user_name, u.headphoto, a.article_introduce, c.content AS comment_info " +
         "FROM message_like ml " +
-        "LEFT JOIN users u ON ml.user_id = u.id " +
+        "LEFT JOIN users u ON ml.user_id = u.user_id " +
         "LEFT JOIN articles a ON ml.article_id = a.article_id " +
         "LEFT JOIN comments c ON ml.comment_id = c.comment_id " +
         "WHERE ml.receiver_id = ?";

@@ -34,9 +34,7 @@ class ArticleController {
     const imgPath = `${process.env.ARTICLE_IMG_PATH}/${req.file.filename}`;
     unifiedResponseBody({
       result_msg: "上传图片成功",
-      result: {
-        imgURL: imgPath,
-      },
+      result: imgPath,
       res,
     });
   };
@@ -53,7 +51,7 @@ class ArticleController {
       const articleList = await Promise.all(
         retrieveRes.map(async (item) => {
           const sql_SelectUserInfo =
-            "SELECT name, major, university, headphoto, signature, article_num FROM users WHERE id=?";
+            "SELECT name, major, university, headphoto, signature, article_num FROM users WHERE user_id = ?";
           const userInfoList = (await queryPromise(
             sql_SelectUserInfo,
             item.author_id
@@ -528,6 +526,39 @@ class ArticleController {
         error,
         result: { error },
         result_msg: "获取文章趋势失败",
+      });
+    }
+  };
+
+  // 查询文章
+  searchArticle = async (req: Request, res: Response) => {
+    const { keyword } = req.query;
+    try {
+      // 通过article_title、article_major、article_labels、article_introduce进行模糊查询
+      const retrieveRes = (await queryPromise(
+        "select * from articles where article_title like ? or article_major like ? or article_labels like ? or article_introduce like ?",
+        [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`]
+      )) as ArticleBasicInfo[];
+
+      const article_list = retrieveRes.map((item) => {
+        const { article_details, article_md, ...article_item } = item;
+        article_item.article_major = (item.article_major as string).split(",");
+        article_item.article_labels = (item.article_labels as string).split(
+          ","
+        );
+        return article_item;
+      });
+      unifiedResponseBody({
+        result_msg: "查询文章成功",
+        result: article_list,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "查询文章失败",
+        result: { error },
+        res,
       });
     }
   };

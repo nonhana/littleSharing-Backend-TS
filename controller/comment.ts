@@ -23,18 +23,18 @@ class CommentController {
         const user_id = item.user_id;
 
         const user_info = await queryPromise(
-          "select * from users where id = ?",
+          "select * from users where user_id = ?",
           user_id
         );
 
         if (item.comment_level === 0) {
           const level0_comment_item = {
             comment_id: item.comment_id,
-            content: item.content,
+            comment_content: item.comment_content,
             create_date: item.create_date,
             likes: item.likes,
             commentator: {
-              id: user_id,
+              user_id: user_id,
               name: user_info[0].name,
               header_photo: user_info[0].headphoto,
             },
@@ -45,11 +45,11 @@ class CommentController {
           let level1_comment_item = {
             response_to_comment_id: item.response_to_comment_id,
             comment_id: item.comment_id,
-            content: item.content,
+            comment_content: item.comment_content,
             response_date: item.create_date,
             likes: item.likes,
             respondent: {
-              id: user_id,
+              user_id,
               name: user_info[0].name,
               header_photo: user_info[0].headphoto,
             },
@@ -60,12 +60,12 @@ class CommentController {
             const response_to_user_id = item.response_to_user_id;
 
             const response_to_user_info = await queryPromise(
-              "select name from users where id = ?",
+              "select name from users where user_id = ?",
               response_to_user_id
             );
 
             level1_comment_item.response_to = {
-              id: item.response_to_user_id,
+              user_id: item.response_to_user_id,
               name: response_to_user_info[0].name,
             };
           }
@@ -97,12 +97,16 @@ class CommentController {
   };
 
   // 评论相关操作
-  commentAction = async (req: Request, res: Response) => {
-    const { action_type, ...comment_info } = req.body;
+  commentAction = async (req: AuthenticatedRequest, res: Response) => {
+    const { action_type, ...commentSource } = req.body;
     try {
       if (action_type === 0) {
+        const commentInfo = {
+          ...commentSource,
+          user_id: req.state!.userInfo.user_id,
+        };
         // 添加评论
-        await queryPromise("insert into comments set ?", comment_info);
+        await queryPromise("insert into comments set ?", commentInfo);
         unifiedResponseBody({
           result_msg: "评论成功",
           res,
@@ -111,7 +115,7 @@ class CommentController {
         // 删除评论
         await queryPromise(
           "delete from comments where comment_id=?",
-          comment_info.comment_id
+          commentSource.comment_id
         );
         unifiedResponseBody({
           result_msg: "删除评论成功",
