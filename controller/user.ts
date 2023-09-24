@@ -220,8 +220,6 @@ class UserController {
   getUserInfo = async (req: AuthenticatedRequest, res: Response) => {
     const { user_id } = req.query;
     try {
-      console.log(user_id);
-      console.log(req.state!.userInfo.user_id);
       let retrieveRes = null;
       // 有id，通过id获取；无id，通过解析token获取
       if (user_id) {
