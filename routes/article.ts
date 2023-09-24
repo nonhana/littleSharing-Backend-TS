@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import { articleController } from "../controller/article";
 import { auth } from "../middleware/user.middleware";
+import { imgUploadError } from "../middleware/upload.middleware";
 
 // 文章图片上传
 const articleImgUpload = multer({
@@ -38,6 +39,7 @@ router.post(
   "/upload-article-img",
   auth,
   articleImgUpload.single("articleImg"),
+  imgUploadError,
   articleController.uploadArticleImg
 );
 router.get("/article-list", auth, articleController.getArticleList);

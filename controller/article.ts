@@ -202,9 +202,22 @@ class ArticleController {
 
   // 新增文章标签的处理函数
   addArticleLabel = async (req: Request, res: Response) => {
-    const newlabel = req.body;
+    const { label_list } = req.body;
     try {
-      await queryPromise("insert into article_labels set ?", newlabel);
+      // 筛选出目前数据库中还没有的标签
+      const retrieveRes = (await queryPromise(
+        "select * from article_labels"
+      )) as { label_name: string }[];
+      const newLabelList = label_list.filter(
+        (item: string) =>
+          !retrieveRes.some((label) => label.label_name === item)
+      );
+      // 将新标签插入数据库
+      newLabelList.forEach(async (item: string) => {
+        await queryPromise("insert into article_labels set ?", {
+          label_name: item,
+        });
+      });
       unifiedResponseBody({
         res,
         result_msg: "新增文章标签成功",

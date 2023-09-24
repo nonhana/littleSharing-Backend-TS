@@ -104,9 +104,19 @@ class UserController {
     try {
       // 2. 在数据库中查询用户所提交的账号
       const retrieveRes = await queryPromise(
-        "select * from users where account=?",
+        "select * from users where account = ?",
         account
       );
+
+      // 如果账号不存在
+      if (retrieveRes.length === 0) {
+        unifiedResponseBody({
+          result_code: 1,
+          result_msg: "该账号不存在，请先进行注册",
+          res,
+        });
+        return;
+      }
 
       const compareRes = bcryptjs.compareSync(
         password,
@@ -422,7 +432,7 @@ class UserController {
     const { user_id } = req.query;
     try {
       const retrieveRes = await queryPromise(
-        "select * from user_focus where first_user_id = ?",
+        "select second_user_id from user_focus where first_user_id = ?",
         user_id
       );
       unifiedResponseBody({
@@ -447,7 +457,7 @@ class UserController {
     const { user_id } = req.query;
     try {
       const retrieveRes = await queryPromise(
-        "select * from user_focus where second_user_id = ?",
+        "select first_user_id from user_focus where second_user_id = ?",
         user_id
       );
       unifiedResponseBody({

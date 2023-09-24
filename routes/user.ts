@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import { userController } from "../controller/user";
 import { auth } from "../middleware/user.middleware";
+import { imgUploadError } from "../middleware/upload.middleware";
 
 // 头像上传
 const avatarUpload = multer({
@@ -66,12 +67,14 @@ router.post(
   "/upload-avatar",
   auth,
   avatarUpload.single("avatar"),
+  imgUploadError,
   userController.uploadAvatar
 );
 router.post(
   "/upload-background",
   auth,
   backgroundUpload.single("background"),
+  imgUploadError,
   userController.uploadBackground
 );
 router.post("/register", userController.register);
