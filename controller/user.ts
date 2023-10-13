@@ -693,6 +693,43 @@ class UserController {
       });
     }
   };
+
+  // 获取某个用户发布的文章列表
+  getUserArticles = async (req: Request, res: Response) => {
+    const { user_id } = req.query;
+    try {
+      // 拿到文章列表，和用户表进行联表查询
+      let retrieveRes = await queryPromise(
+        `
+        select 
+        a.article_id,a.article_title,a.article_labels,a.article_introduce,a.article_uploaddate,a.author_id,u.name as author_name        from articles as a
+        join users as u on a.author_id = u.user_id
+        where a.author_id = ?
+        `,
+        user_id
+      );
+
+      retrieveRes.forEach((_: any, index: number) => {
+        retrieveRes[index].article_labels =
+          retrieveRes[index].article_labels.split(",");
+      });
+
+      unifiedResponseBody({
+        result_msg: "获取用户文章列表成功",
+        result: retrieveRes,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        res,
+        result: {
+          error,
+        },
+        result_msg: "获取用户文章列表失败",
+      });
+    }
+  };
 }
 
 export const userController = new UserController();

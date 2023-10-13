@@ -575,6 +575,59 @@ class ArticleController {
       });
     }
   };
+
+  // 根据文章的label获取相似文章
+  getSimilarArticles = async (req: Request, res: Response) => {
+    const { labels, article_id } = req.query;
+    try {
+      let result: any[] = []; // 存放最终结果
+      const articleIdSet = new Set<number>();
+      const labelList = (<string>labels).split(",");
+
+      // 使用Promise.all等待所有异步操作完成
+      await Promise.all(
+        labelList.map(async (item) => {
+          const retrieveRes = await queryPromise(
+            "select article_id from articles where article_labels like ?",
+            `%${item}%`
+          );
+          retrieveRes.forEach((item: any) => articleIdSet.add(item.article_id));
+        })
+      );
+
+      // 处理articleIdSet
+      for (let article_id of articleIdSet) {
+        let itemRes = (
+          await queryPromise(
+            `
+              select 
+              a.article_id,a.article_title,a.article_labels,a.article_introduce,a.article_uploaddate,a.author_id,u.name as author_name        from articles as a
+              join users as u on a.author_id = u.user_id
+              where a.article_id = ?
+            `,
+            article_id
+          )
+        )[0];
+        itemRes.article_labels = itemRes.article_labels.split(",");
+        result.push(itemRes);
+      }
+
+      unifiedResponseBody({
+        result_msg: "获取相似文章列表成功",
+        result: result.filter(
+          (item: any) => item.article_id !== Number(article_id)
+        ),
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "获取相似文章列表失败",
+        result: { error },
+        res,
+      });
+    }
+  };
 }
 
 export const articleController = new ArticleController();

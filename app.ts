@@ -4,7 +4,6 @@ import path from "path";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
 import cors from "cors";
-import bodyParser from "body-parser";
 // 引入路由模块
 import userRouter from "./routes/user";
 import articleRouter from "./routes/article";
@@ -19,22 +18,11 @@ app.set("view engine", "jade");
 
 // 配置中间件
 app.use(logger("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// 设置请求体大小限制
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
 app.use(cors());
-app.use(
-  bodyParser.json({
-    limit: "10mb",
-  })
-);
-app.use(
-  bodyParser.urlencoded({
-    limit: "10000kb",
-    extended: true,
-    parameterLimit: 50000,
-  })
-);
 // 配置静态资源路径
 app.use(express.static("public"));
 

@@ -103,5 +103,6 @@ router.post("/like-action", auth, userController.addLike);
 router.get("/user-like-list", auth, userController.getUserLikeList);
 router.post("/collect-action", auth, userController.addCollect);
 router.get("/user-collect-list", auth, userController.getUserCollectList);
+router.get("/get-user-articles", auth, userController.getUserArticles);
 
 export default router;

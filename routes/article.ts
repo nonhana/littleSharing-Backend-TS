@@ -57,5 +57,6 @@ router.post("/add-article-trend", auth, articleController.postArticleTrend);
 router.post("/increase-view", auth, articleController.increaseArticleView);
 router.get("/get-article-trend", auth, articleController.getArticleTrend);
 router.get("/search-article", auth, articleController.searchArticle);
+router.get("/get-similar-articles", auth, articleController.getSimilarArticles);
 
 export default router;
