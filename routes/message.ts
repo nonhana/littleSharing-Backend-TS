@@ -1,9 +1,10 @@
 import express from "express";
-import { messageController } from "../controller/message";
+// import { messageController } from "../controller/message";
+import { likeMessage } from "../controller/message/likeMessage";
 
 const router = express.Router();
 
-router.post("/send-like", messageController.sendMessageLike);
-router.get("/get-like-list", messageController.getMessageLikeList);
+router.post("/send-like", likeMessage.sendMessageLike);
+router.get("/get-like-list", likeMessage.getMessageLikeList);
 
 export default router;

@@ -3,10 +3,9 @@ import {
   queryPromise,
   unifiedResponseBody,
   errorHandler,
-} from "../utils/index";
-import type { MessageLike } from "../types/message";
+} from "../../utils/index";
 
-class MessageController {
+class LikeMessage {
   // 查找某用户的点赞消息列表
   getMessageLikeList = async (req: Request, res: Response) => {
     const { user_id } = req.query;
@@ -21,8 +20,8 @@ class MessageController {
 
       const source = await queryPromise(sql_GetMessageLikeList, user_id);
 
-      const likeMessageList: MessageLike[] = source.map((message: any) => {
-        const likeMessage: MessageLike = {
+      const likeMessageList = source.map((message: any) => {
+        const likeMessage: any = {
           message_id: message.message_id,
           user_id: message.user_id,
           user_name: message.user_name,
@@ -78,4 +77,4 @@ class MessageController {
   };
 }
 
-export const messageController = new MessageController();
+export const likeMessage = new LikeMessage();
