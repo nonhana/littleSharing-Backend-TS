@@ -11,12 +11,18 @@ dotenv.config();
 class OtherData {
   // 获取用户的keywords
   getUserKeywords = async (req: AuthenticatedRequest, res: Response) => {
+    const { user_id } = req.query;
     try {
       // 获取该用户的keywords
-      const keywords = await queryPromise(
-        "select keywords_name, keywords_count from keywords where user_id = ?",
-        req.state!.userInfo.user_id
-      );
+      const keywords = user_id
+        ? await queryPromise(
+            "select keywords_name, keywords_count from keywords where user_id = ?",
+            user_id
+          )
+        : await queryPromise(
+            "select keywords_name, keywords_count from keywords where user_id = ?",
+            req.state!.userInfo.user_id
+          );
       unifiedResponseBody({
         result_msg: "获取用户keywords成功",
         result: keywords,
