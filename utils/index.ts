@@ -96,7 +96,7 @@ export const paramsErrorHandler = (result: object, res: Response) => {
   });
 };
 
-// 获取文章详情中的图片链接
+// 从HTML中提取图片链接
 export const getImgSrc = (htmlstr: string) => {
   const reg = /<img.+?src=('|")?([^'"]+)('|")?(?:\s+|>)/gim;
   const arr = [];
@@ -104,6 +104,23 @@ export const getImgSrc = (htmlstr: string) => {
   while ((tem = reg.exec(htmlstr))) {
     arr.push(tem[2]);
   }
+  return arr;
+};
+
+// 从Markdown中提取图片链接
+export const getMarkdownImgSrc = (mdText: string): string[] => {
+  // 正则表达式用于匹配 Markdown 中的 img 标签
+  // 格式： ![alt text](url)
+  const imgRegex = /!\[.*?\]\((.*?)\)/g;
+
+  const arr: string[] = [];
+  let match;
+
+  // 使用正则表达式的 exec 方法在循环中查找所有匹配项
+  while ((match = imgRegex.exec(mdText))) {
+    arr.push(match[1]); // 第二个捕获组包含 URL
+  }
+
   return arr;
 };
 

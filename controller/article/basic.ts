@@ -3,7 +3,7 @@ import {
   queryPromise,
   unifiedResponseBody,
   errorHandler,
-  getImgSrc,
+  getMarkdownImgSrc,
   shuffle,
 } from "../../utils/index";
 
@@ -23,7 +23,7 @@ class Basic {
       const articleList = retrieveRes.map((item: any) => {
         const articleInfo = {
           ...item,
-          cover_image: getImgSrc(item.article_details)[0],
+          cover_image: getMarkdownImgSrc(item.article_md)[0],
         };
         articleInfo.article_major = articleInfo.article_major.split(",");
         articleInfo.article_labels = articleInfo.article_labels.split(",");
