@@ -4,15 +4,16 @@ import {
   unifiedResponseBody,
   errorHandler,
 } from "../../utils/index";
+import type { Bookmark, Trend } from "./types";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
 
 class OtherData {
   // 获取文章书签
   getBookMark = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: Bookmark[] = await queryPromise(
         "select * from article_bookmarks where user_id = ?",
-        req.state!.userInfo.user_id
+        req.state!.userInfo!.user_id
       );
       unifiedResponseBody({
         res,
@@ -32,9 +33,9 @@ class OtherData {
   // 获取文章趋势
   getArticleTrend = async (_: Request, res: Response) => {
     try {
-      const source = await queryPromise("select * from scan_trend");
+      const source: Trend[] = await queryPromise("select * from scan_trend");
 
-      const updatedTrends = source.map((trend: any) => {
+      const updatedTrends = source.map((trend) => {
         const {
           January,
           February,

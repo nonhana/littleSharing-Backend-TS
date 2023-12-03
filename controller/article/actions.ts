@@ -4,6 +4,19 @@ import {
   unifiedResponseBody,
   errorHandler,
 } from "../../utils/index";
+import type {
+  Label,
+  Bookmark,
+  Trend,
+  Keyword,
+  ArticleSimple,
+  ArticleSrc,
+  AddArticleLabelRequestBody,
+  AddBookMarkRequestBody,
+  RemoveBookMarkRequestBody,
+  PostArticleTrendRequestBody,
+  IncreaseArticleViewRequestBody,
+} from "./types";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
 import { months } from "../../constant";
 import dotenv from "dotenv";
@@ -31,18 +44,17 @@ class Actions {
 
   // 新增文章标签的处理函数
   addArticleLabel = async (req: Request, res: Response) => {
-    const { label_list } = req.body;
+    const { label_list } = req.body as AddArticleLabelRequestBody;
     try {
       // 筛选出目前数据库中还没有的标签
-      const retrieveRes = (await queryPromise(
+      const retrieveRes: Label[] = await queryPromise(
         "select * from article_labels"
-      )) as { label_name: string }[];
-      const newLabelList = label_list.filter(
-        (item: string) =>
-          !retrieveRes.some((label) => label.label_name === item)
+      );
+      const newLabelList = label_list.filter((item) =>
+        retrieveRes.some((label) => label.label_name === item)
       );
       // 将新标签插入数据库
-      newLabelList.forEach(async (item: string) => {
+      newLabelList.forEach(async (item) => {
         await queryPromise("insert into article_labels set ?", {
           label_name: item,
         });
@@ -63,23 +75,23 @@ class Actions {
 
   // 当用户在文章详情页进行书签的添加时，将该书签信息存入数据库
   addBookMark = async (req: AuthenticatedRequest, res: Response) => {
-    const { article_id, topHeight } = req.body;
+    const { article_id, topHeight } = req.body as AddBookMarkRequestBody;
     try {
-      const bookmarks = await queryPromise(
+      const bookmarks: Bookmark[] = await queryPromise(
         "SELECT * FROM article_bookmarks WHERE user_id = ?",
-        req.state!.userInfo.user_id
+        req.state!.userInfo!.user_id
       );
 
       let flag = false;
       for (const item of bookmarks) {
         if (
           item.article_id === article_id &&
-          item.user_id === req.state!.userInfo.user_id
+          item.user_id === req.state!.userInfo!.user_id
         ) {
           flag = true;
           await queryPromise(
             "UPDATE article_bookmarks SET topHeight = ? WHERE article_id = ? AND user_id = ?",
-            [topHeight, article_id, req.state!.userInfo.user_id]
+            [topHeight, article_id, req.state!.userInfo!.user_id]
           );
           break;
         }
@@ -89,7 +101,7 @@ class Actions {
         await queryPromise("INSERT INTO article_bookmarks SET ?", {
           article_id,
           topHeight,
-          user_id: req.state!.userInfo.user_id,
+          user_id: req.state!.userInfo!.user_id,
         });
       }
       unifiedResponseBody({
@@ -108,11 +120,11 @@ class Actions {
 
   // 删除书签
   removeBookMark = async (req: AuthenticatedRequest, res: Response) => {
-    const { article_id } = req.body;
+    const { article_id } = req.body as RemoveBookMarkRequestBody;
     try {
       await queryPromise(
         "delete from article_bookmarks where article_id = ? and user_id = ?",
-        [article_id, req.state!.userInfo.user_id]
+        [article_id, req.state!.userInfo!.user_id]
       );
       unifiedResponseBody({
         result_msg: "移除书签成功",
@@ -130,11 +142,12 @@ class Actions {
 
   // 提交浏览趋势的处理函数
   postArticleTrend = async (req: Request, res: Response) => {
-    const { present_date, label_list } = req.body;
-    const month = months[Number(present_date.slice(5, 7)) - 1];
+    const { present_date, label_list } =
+      req.body as PostArticleTrendRequestBody;
+    const month = months[Number(present_date.slice(5, 7)) - 1]; // 拿到当前的月份
     try {
       const addTrend = async (item: string) => {
-        const retrieveRes = await queryPromise(
+        const retrieveRes: Trend[] = await queryPromise(
           "SELECT * FROM scan_trend WHERE trend_name = ?",
           item
         );
@@ -152,7 +165,7 @@ class Actions {
         }
       };
 
-      await Promise.all(label_list.map((item: string) => addTrend(item)));
+      await Promise.all(label_list.map((item) => addTrend(item)));
       unifiedResponseBody({
         res,
         result_msg: "提交浏览趋势成功",
@@ -169,7 +182,7 @@ class Actions {
 
   // 增加文章浏览量的处理函数
   increaseArticleView = async (req: Request, res: Response) => {
-    const { article_id } = req.body;
+    const { article_id } = req.body as IncreaseArticleViewRequestBody;
     try {
       await queryPromise(
         "update articles set view_num = view_num + 1 where article_id = ?",
@@ -194,7 +207,7 @@ class Actions {
     const { keyword: origin_keyword } = req.query;
     try {
       // 1. 通过article_title、article_major、article_labels、article_introduce进行模糊查询
-      const articleListSource = await queryPromise(
+      const articleListSource: ArticleSrc[] = await queryPromise(
         "select * from articles where article_title like ? or article_major like ? or article_labels like ? or article_introduce like ?",
         [
           `%${origin_keyword}%`,
@@ -204,20 +217,20 @@ class Actions {
         ]
       );
 
-      const article_list = articleListSource.map((item: any) => {
-        const { article_details, article_md, ...article_item } = item;
-        article_item.article_major = (item.article_major as string).split(",");
-        article_item.article_labels = (item.article_labels as string).split(
-          ","
-        );
-        return article_item;
+      const article_list = articleListSource.map((item) => {
+        const { artilce_md, ...article_item } = item;
+        return {
+          ...article_item,
+          article_major: (item.article_major as string).split(","),
+          article_labels: (item.article_labels as string).split(","),
+        };
       });
 
       // 2. 搜索时将搜索关键词提交给数据库后台并做记录
       const keyword = (<string>origin_keyword).toLowerCase();
-      const userKeyWordSource = await queryPromise(
+      const userKeyWordSource: Keyword[] = await queryPromise(
         "SELECT * FROM keywords WHERE user_id = ?",
-        req.state!.userInfo.user_id
+        req.state!.userInfo!.user_id
       );
 
       let flag = false;
@@ -226,7 +239,7 @@ class Actions {
           flag = true;
           await queryPromise(
             "INSERT INTO keywords (keywords_name, keywords_count, user_id) VALUES (?, 1, ?) ON DUPLICATE KEY UPDATE keywords_count = keywords_count + 1",
-            [keyword, req.state!.userInfo.user_id]
+            [keyword, req.state!.userInfo!.user_id]
           );
           break;
         }
@@ -235,7 +248,7 @@ class Actions {
         const insertNewKeyword = {
           keywords_name: keyword,
           keywords_count: 1,
-          user_id: req.state!.userInfo.user_id,
+          user_id: req.state!.userInfo!.user_id,
         };
         await queryPromise("INSERT INTO keywords SET ?", insertNewKeyword);
       }
@@ -259,43 +272,46 @@ class Actions {
   getSimilarArticles = async (req: Request, res: Response) => {
     const { labels, article_id } = req.query;
     try {
-      let result: any[] = []; // 存放最终结果
+      let result = []; // 存放最终结果
       const articleIdSet = new Set<number>();
       const labelList = (<string>labels).split(",");
 
       // 使用Promise.all等待所有异步操作完成
       await Promise.all(
         labelList.map(async (item) => {
-          const retrieveRes = await queryPromise(
+          const retrieveRes: { article_id: number }[] = await queryPromise(
             "select article_id from articles where article_labels like ?",
             `%${item}%`
           );
-          retrieveRes.forEach((item: any) => articleIdSet.add(item.article_id));
+          retrieveRes.forEach((item) => articleIdSet.add(item.article_id));
         })
       );
 
       // 处理articleIdSet
-      for (let article_id of articleIdSet) {
-        let itemRes = (
+      for (const article_id of articleIdSet) {
+        let itemRes: ArticleSimple = (
           await queryPromise(
             `
-                select 
-                a.article_id,a.article_title,a.article_labels,a.article_introduce,a.article_uploaddate,a.author_id,u.name as author_name        from articles as a
-                join users as u on a.author_id = u.user_id
-                where a.article_id = ?
-              `,
+            select 
+            a.article_id,a.article_title,a.article_labels,a.article_introduce,a.article_uploaddate,a.author_id,u.name as author_name
+            from articles as a
+            join users as u on a.author_id = u.user_id
+            where a.article_id = ?
+            `,
             article_id
           )
         )[0];
-        itemRes.article_labels = itemRes.article_labels.split(",");
-        result.push(itemRes);
+        result.push({
+          ...itemRes,
+          article_labels: itemRes.article_labels.split(","),
+        });
       }
+
+      result = result.filter((item) => item.article_id !== Number(article_id));
 
       unifiedResponseBody({
         result_msg: "获取相似文章列表成功",
-        result: result.filter(
-          (item: any) => item.article_id !== Number(article_id)
-        ),
+        result,
         res,
       });
     } catch (error) {

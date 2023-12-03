@@ -70,6 +70,7 @@ export const unifiedResponseBody = ({
   });
 };
 
+// 失败返回响应体
 export const errorHandler = ({
   error,
   httpStatus = 500,
@@ -86,6 +87,7 @@ export const errorHandler = ({
   });
 };
 
+// 参数错误处理函数
 export const paramsErrorHandler = (result: object, res: Response) => {
   unifiedResponseBody({
     httpStatus: 400,

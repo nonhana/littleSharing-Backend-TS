@@ -4,18 +4,20 @@ import {
   unifiedResponseBody,
   errorHandler,
 } from "../../utils/index";
+import type { CommentLikeActionRequestBody } from "./types";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
 
 class Actions {
   // 评论点赞相关操作
   commentLikeAction = async (req: AuthenticatedRequest, res: Response) => {
-    const { comment_id, action_type } = req.body;
+    const { comment_id, action_type } =
+      req.body as CommentLikeActionRequestBody;
     try {
       if (action_type === 0) {
         // 添加评论点赞
         await queryPromise("insert into comment_like set ?", {
           comment_id,
-          user_id: req.state!.userInfo.user_id,
+          user_id: req.state!.userInfo!.user_id,
         });
         unifiedResponseBody({
           result_msg: "评论点赞成功",
@@ -25,7 +27,7 @@ class Actions {
         // 删除评论点赞
         await queryPromise(
           "delete from comment_like where comment_id = ? and user_id = ?",
-          [comment_id, req.state!.userInfo.user_id]
+          [comment_id, req.state!.userInfo!.user_id]
         );
         unifiedResponseBody({
           result_msg: "删除评论点赞成功",

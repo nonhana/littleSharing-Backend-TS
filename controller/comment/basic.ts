@@ -4,6 +4,13 @@ import {
   unifiedResponseBody,
   errorHandler,
 } from "../../utils/index";
+import type {
+  CommentSrc,
+  Level0Comment,
+  Level1Comment,
+  CommentActionRequestBody,
+} from "./types";
+import type { User } from "../user/types";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
 
 class Basic {
@@ -11,24 +18,24 @@ class Basic {
   getCommentList = async (req: Request, res: Response) => {
     const { article_id } = req.query;
     try {
-      const commentSource = await queryPromise(
+      const commentSource: CommentSrc[] = await queryPromise(
         "select * from comments where article_id = ?",
         article_id
       );
 
-      let level0_comment_list: any[] = []; // 一级评论列表
-      let level1_comment_list: any[] = []; // 二级评论列表
+      let level0_comment_list: Level0Comment[] = []; // 一级评论列表
+      let level1_comment_list: Level1Comment[] = []; // 二级评论列表
 
       for (const item of commentSource) {
         const user_id = item.user_id;
 
-        const user_info = await queryPromise(
+        const user_info: User[] = await queryPromise(
           "select * from users where user_id = ?",
           user_id
         );
 
         if (item.comment_level === 0) {
-          const level0_comment_item = {
+          const level0_comment_item: Level0Comment = {
             comment_id: item.comment_id,
             comment_content: item.comment_content,
             create_date: item.create_date,
@@ -42,7 +49,7 @@ class Basic {
           };
           level0_comment_list.push(level0_comment_item);
         } else if (item.comment_level === 1) {
-          let level1_comment_item = {
+          let level1_comment_item: Level1Comment = {
             response_to_comment_id: item.response_to_comment_id,
             comment_id: item.comment_id,
             comment_content: item.comment_content,
@@ -59,10 +66,11 @@ class Basic {
           if (item.response_to_user_id) {
             const response_to_user_id = item.response_to_user_id;
 
-            const response_to_user_info = await queryPromise(
-              "select name from users where user_id = ?",
-              response_to_user_id
-            );
+            const response_to_user_info: { name: string }[] =
+              await queryPromise(
+                "select name from users where user_id = ?",
+                response_to_user_id
+              );
 
             level1_comment_item.response_to = {
               user_id: item.response_to_user_id,
@@ -98,12 +106,13 @@ class Basic {
 
   // 评论相关操作
   commentAction = async (req: AuthenticatedRequest, res: Response) => {
-    const { action_type, ...commentSource } = req.body;
+    const { action_type, ...commentSource } =
+      req.body as CommentActionRequestBody;
     try {
       if (action_type === 0) {
         const commentInfo = {
           ...commentSource,
-          user_id: req.state!.userInfo.user_id,
+          user_id: req.state!.userInfo!.user_id,
         };
         // 添加评论
         await queryPromise("insert into comments set ?", commentInfo);
@@ -115,7 +124,7 @@ class Basic {
         // 删除评论
         await queryPromise(
           "delete from comments where comment_id=?",
-          commentSource.comment_id
+          commentSource.delete_comment_id
         );
         unifiedResponseBody({
           result_msg: "删除评论成功",

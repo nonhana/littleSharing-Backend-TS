@@ -5,6 +5,11 @@ import {
   errorHandler,
 } from "../../utils/index";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
+import type {
+  FocusUserActionsRequestBody,
+  AddLikeRequestBody,
+  AddCollectRequestBody,
+} from "./types";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -49,7 +54,8 @@ class Actions {
 
   // 用户关注的处理函数
   focusUserActions = async (req: Request, res: Response) => {
-    const { action_type, ...focus_info } = req.body;
+    const { action_type, ...focus_info } =
+      req.body as FocusUserActionsRequestBody;
     try {
       if (action_type == 0) {
         await queryPromise("insert into user_focus set ?", focus_info);
@@ -81,15 +87,15 @@ class Actions {
 
   // 用户点赞的处理函数
   addLike = async (req: AuthenticatedRequest, res: Response) => {
-    const { article_id, action_type } = req.body;
+    const { article_id, action_type } = req.body as AddLikeRequestBody;
     try {
       if (action_type === 0) {
-        const retrieveRes = await queryPromise(
+        const retrieveRes: { article_id: number }[] = await queryPromise(
           "select article_id from article_like where user_id = ?",
-          req.state!.userInfo.user_id
+          req.state!.userInfo!.user_id
         );
 
-        if (retrieveRes.some((item: any) => item.article_id === article_id)) {
+        if (retrieveRes.some((item) => item.article_id === article_id)) {
           unifiedResponseBody({
             result_msg: "已经点赞过该文章",
             res,
@@ -99,7 +105,7 @@ class Actions {
 
         await queryPromise("insert into article_like set ?", {
           article_id,
-          user_id: req.state!.userInfo.user_id,
+          user_id: req.state!.userInfo!.user_id,
         });
 
         unifiedResponseBody({
@@ -109,7 +115,7 @@ class Actions {
       } else if (action_type === 1) {
         await queryPromise(
           "delete from article_like where article_id = ? and user_id = ?",
-          [article_id, req.state!.userInfo.user_id]
+          [article_id, req.state!.userInfo!.user_id]
         );
         unifiedResponseBody({
           result_msg: "取消点赞成功",
@@ -137,15 +143,15 @@ class Actions {
 
   // 用户收藏的处理函数
   addCollect = async (req: AuthenticatedRequest, res: Response) => {
-    const { article_id, action_type } = req.body;
+    const { article_id, action_type } = req.body as AddCollectRequestBody;
     try {
       if (action_type === 0) {
-        const retrieveRes = await queryPromise(
+        const retrieveRes: { article_id: number }[] = await queryPromise(
           "select article_id from article_collect where user_id=?",
-          req.state!.userInfo.user_id
+          req.state!.userInfo!.user_id
         );
 
-        if (retrieveRes.some((item: any) => item.article_id === article_id)) {
+        if (retrieveRes.some((item) => item.article_id === article_id)) {
           unifiedResponseBody({
             result_msg: "已经收藏过该文章",
             res,
@@ -155,7 +161,7 @@ class Actions {
 
         await queryPromise("insert into article_collect set ?", {
           article_id,
-          user_id: req.state!.userInfo.user_id,
+          user_id: req.state!.userInfo!.user_id,
         });
 
         unifiedResponseBody({
@@ -165,7 +171,7 @@ class Actions {
       } else if (action_type === 1) {
         await queryPromise(
           "delete from article_collect where article_id=? and user_id=?",
-          [article_id, req.state!.userInfo.user_id]
+          [article_id, req.state!.userInfo!.user_id]
         );
         unifiedResponseBody({
           result_msg: "取消收藏成功",

@@ -4,6 +4,12 @@ import {
   unifiedResponseBody,
   errorHandler,
 } from "../../utils/index";
+import type {
+  User,
+  RegisterRequestBody,
+  LoginRequestBody,
+  EditUserInfoRequestBody,
+} from "./types";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -14,7 +20,7 @@ class Basic {
   // 注册的处理函数
   register = async (req: Request, res: Response) => {
     // 1.接收表单数据(此处的userinfo含有三个属性:name,account,password)
-    const { name, account, password } = req.body;
+    const { name, account, password } = req.body as RegisterRequestBody;
     try {
       // 2.定义sql语句，查找该账号是否被占用
       const retrieveRes = await queryPromise(
@@ -62,10 +68,10 @@ class Basic {
   // 登录的处理函数
   login = async (req: Request, res: Response) => {
     // 1. 获取登录时提交的数据
-    const { account, password } = req.body;
+    const { account, password } = req.body as LoginRequestBody;
     try {
       // 2. 在数据库中查询用户所提交的账号
-      const retrieveRes = await queryPromise(
+      const retrieveRes: User[] = await queryPromise(
         "select * from users where account = ?",
         account
       );
@@ -80,12 +86,8 @@ class Basic {
         return;
       }
 
-      const compareRes = bcryptjs.compareSync(
-        password,
-        retrieveRes[0].password
-      );
-
-      if (!compareRes) {
+      // 比对密码
+      if (!bcryptjs.compareSync(password, retrieveRes[0].password)) {
         unifiedResponseBody({
           result_code: 1,
           result_msg: "密码错误！请重新输入",
@@ -106,7 +108,7 @@ class Basic {
         } = retrieveRes[0];
 
         const token = jwt.sign(user, process.env.JWT_SECRET!, {
-          expiresIn: "24h",
+          expiresIn: "30d", // token有效期为30天
         });
 
         unifiedResponseBody({
@@ -132,7 +134,7 @@ class Basic {
   getUserInfo = async (req: AuthenticatedRequest, res: Response) => {
     const { user_id } = req.query;
     try {
-      let retrieveRes = null;
+      let retrieveRes: User[];
       // 有id，通过id获取；无id，通过解析token获取
       if (user_id) {
         retrieveRes = await queryPromise(
@@ -142,7 +144,7 @@ class Basic {
       } else {
         retrieveRes = await queryPromise(
           "select * from users where user_id = ?",
-          req.state!.userInfo.user_id
+          req.state!.userInfo!.user_id
         );
       }
 
@@ -167,7 +169,7 @@ class Basic {
 
   // 提交更新表单，更新某一用户的用户信息
   editUserInfo = async (req: Request, res: Response) => {
-    const { user_id, ...newUserInfo } = req.body;
+    const { user_id, ...newUserInfo } = req.body as EditUserInfoRequestBody;
     try {
       const newMajor = newUserInfo.major.join(",");
       await queryPromise(

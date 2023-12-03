@@ -8,11 +8,11 @@ import type { AuthenticatedRequest } from "../../middleware/user.middleware";
 
 class OtherData {
   // 获取用户的评论点赞列表
-  getCommentLikeList = (req: AuthenticatedRequest, res: Response) => {
+  getCommentLikeList = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const retrieveRes = queryPromise(
+      const retrieveRes: { comment_id: number }[] = await queryPromise(
         "select comment_id from comment_like where user_id = ?",
-        req.state!.userInfo.user_id
+        req.state!.userInfo!.user_id
       );
 
       unifiedResponseBody({

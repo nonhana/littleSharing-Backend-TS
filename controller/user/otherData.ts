@@ -5,6 +5,8 @@ import {
   errorHandler,
 } from "../../utils/index";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
+import type { Keyword, Label, Like, Collect } from "./types";
+import type { Article, ArticleSimple } from "../article/types";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -14,14 +16,14 @@ class OtherData {
     const { user_id } = req.query;
     try {
       // 获取该用户的keywords
-      const keywords = user_id
+      const keywords: Keyword[] = user_id
         ? await queryPromise(
             "select keywords_name, keywords_count from keywords where user_id = ?",
             user_id
           )
         : await queryPromise(
             "select keywords_name, keywords_count from keywords where user_id = ?",
-            req.state!.userInfo.user_id
+            req.state!.userInfo!.user_id
           );
       unifiedResponseBody({
         result_msg: "获取用户keywords成功",
@@ -41,13 +43,13 @@ class OtherData {
   };
 
   // 获取用户的article_labels
-  getArticleLabels = async (req: AuthenticatedRequest, res: Response) => {
+  getArticleLabels = async (_: AuthenticatedRequest, res: Response) => {
     try {
       // 获取全局的article_labels
-      const labels = await queryPromise(
+      const labels: Label[] = await queryPromise(
         "select label_name as label from article_labels"
       );
-      labels.forEach((item: any) => {
+      labels.forEach((item) => {
         item.value = item.label;
       });
       unifiedResponseBody({
@@ -69,12 +71,12 @@ class OtherData {
   getUserLikeNum = async (req: Request, res: Response) => {
     const { user_id } = req.query;
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: { like_num: number }[] = await queryPromise(
         "select like_num from articles where author_id = ?",
         user_id
       );
       let total_like_num = 0;
-      retrieveRes.forEach((item: any) => {
+      retrieveRes.forEach((item) => {
         total_like_num += item.like_num;
       });
       unifiedResponseBody({
@@ -98,12 +100,12 @@ class OtherData {
   getUserCollectionNum = async (req: Request, res: Response) => {
     const { user_id } = req.query;
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: { collection_num: number }[] = await queryPromise(
         "select collection_num from articles where author_id = ?",
         user_id
       );
       let total_collection_num = 0;
-      retrieveRes.forEach((item: any) => {
+      retrieveRes.forEach((item) => {
         total_collection_num += item.collection_num;
       });
       unifiedResponseBody({
@@ -126,9 +128,9 @@ class OtherData {
   // 获取用户的被点赞文章数据
   getLikedArticles = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: Like[] = await queryPromise(
         "select * from article_like where article_id in (select article_id from articles where author_id = ? )",
-        req.state!.userInfo.user_id
+        req.state!.userInfo!.user_id
       );
       unifiedResponseBody({
         result_msg: "获取用户点赞文章成功",
@@ -150,9 +152,9 @@ class OtherData {
   // 获取用户的被收藏文章数据
   getCollectedArticles = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: Collect[] = await queryPromise(
         "select * from article_collect where article_id in (select article_id from articles where author_id = ?)",
-        req.state!.userInfo.user_id
+        req.state!.userInfo!.user_id
       );
       unifiedResponseBody({
         result_msg: "获取用户收藏文章成功",
@@ -175,7 +177,7 @@ class OtherData {
   getUserFocusList = async (req: Request, res: Response) => {
     const { user_id } = req.query;
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: { second_user_id: number }[] = await queryPromise(
         "select second_user_id from user_focus where first_user_id = ?",
         user_id
       );
@@ -200,7 +202,7 @@ class OtherData {
   getUserFansList = async (req: Request, res: Response) => {
     const { user_id } = req.query;
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: { first_user_id: number }[] = await queryPromise(
         "select first_user_id from user_focus where second_user_id = ?",
         user_id
       );
@@ -226,13 +228,13 @@ class OtherData {
     const { user_id } = req.query;
     try {
       // 1. 获取用户发布的文章列表
-      const retrieveRes = await queryPromise(
+      const retrieveRes: { article_labels: string }[] = await queryPromise(
         "select article_labels from articles where author_id = ?",
         user_id
       );
       // 2. 对用户发布的文章标签进行统计
-      let source_data = retrieveRes.map((item: any) => item.article_labels);
-      function countOccurrences(arr: any[]) {
+      let source_data = retrieveRes.map((item) => item.article_labels);
+      function countOccurrences(arr: string[]) {
         const counts: {
           [key: string]: number;
         } = {};
@@ -277,12 +279,12 @@ class OtherData {
   // 获取用户的点赞列表
   getUserLikeList = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: { article_id: number }[] = await queryPromise(
         "select article_id from article_like where user_id=?",
-        req.state!.userInfo.user_id
+        req.state!.userInfo!.user_id
       );
 
-      const like_list = retrieveRes.map((item: any) => item.article_id);
+      const like_list = retrieveRes.map((item) => item.article_id);
 
       unifiedResponseBody({
         result_msg: "获取点赞列表成功",
@@ -304,12 +306,12 @@ class OtherData {
   // 获取用户的收藏列表
   getUserCollectList = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: { article_id: number }[] = await queryPromise(
         "select article_id from article_collect where user_id=?",
-        req.state!.userInfo.user_id
+        req.state!.userInfo!.user_id
       );
 
-      const collect_list = retrieveRes.map((item: any) => item.article_id);
+      const collect_list = retrieveRes.map((item) => item.article_id);
 
       unifiedResponseBody({
         result_msg: "获取收藏列表成功",
@@ -333,24 +335,26 @@ class OtherData {
     const { user_id } = req.query;
     try {
       // 拿到文章列表，和用户表进行联表查询
-      let retrieveRes = await queryPromise(
-        `
-          select 
-          a.article_id,a.article_title,a.article_labels,a.article_introduce,a.article_uploaddate,a.author_id,u.name as author_name        from articles as a
-          join users as u on a.author_id = u.user_id
-          where a.author_id = ?
-          `,
-        user_id
-      );
+      const sql = `
+        select 
+        a.article_id, a.article_title, a.article_labels, a.article_introduce, a.article_uploaddate, a.author_id, u.name as author_name
+        from articles as a
+        join users as u on a.author_id = u.user_id
+        where a.author_id = ?
+      `;
 
-      retrieveRes.forEach((_: any, index: number) => {
-        retrieveRes[index].article_labels =
-          retrieveRes[index].article_labels.split(",");
+      let retrieveRes: ArticleSimple[] = await queryPromise(sql, user_id);
+
+      const result = retrieveRes.map((item) => {
+        return {
+          ...item,
+          article_labels: item.article_labels.split(","),
+        };
       });
 
       unifiedResponseBody({
         result_msg: "获取用户文章列表成功",
-        result: retrieveRes,
+        result,
         res,
       });
     } catch (error) {
@@ -375,19 +379,20 @@ class OtherData {
         JOIN users ON articles.author_id = users.user_id
         WHERE articles.author_id = ?
       `;
-      const retrieveRes = await queryPromise(sql, user_id);
+      const retrieveRes: Article[] = await queryPromise(sql, user_id);
 
-      // 处理文章列表
-      const articleList = retrieveRes.map((item: any) => {
-        item.article_major = item.article_major.split(",");
-        item.article_labels = item.article_labels.split(",");
-        return item;
+      const result = retrieveRes.map((item) => {
+        return {
+          ...item,
+          article_major: item.article_major.split(","),
+          article_labels: item.article_labels.split(","),
+        };
       });
 
       unifiedResponseBody({
         res,
         result_msg: "获取文章列表成功",
-        result: articleList,
+        result,
       });
     } catch (error) {
       errorHandler({

@@ -6,6 +6,13 @@ import {
   getMarkdownImgSrc,
   shuffle,
 } from "../../utils/index";
+import type {
+  Article,
+  ArticleSrc,
+  PostArticleRequestBody,
+  EditArticleRequestBody,
+  DeleteArticleRequestBody,
+} from "./types";
 
 class Basic {
   // 获取文章列表的处理函数
@@ -17,16 +24,16 @@ class Basic {
         FROM articles
         JOIN users ON articles.author_id = users.user_id
       `;
-      const retrieveRes = await queryPromise(sql);
+      const retrieveRes: Article[] = await queryPromise(sql);
 
       // 处理文章列表
-      const articleList = retrieveRes.map((item: any) => {
+      const articleList = retrieveRes.map((item) => {
         const articleInfo = {
           ...item,
-          cover_image: getMarkdownImgSrc(item.article_md)[0],
+          cover_image: getMarkdownImgSrc(item.artilce_md)[0],
+          article_major: item.article_major.split(","),
+          article_labels: item.article_labels.split(","),
         };
-        articleInfo.article_major = articleInfo.article_major.split(",");
-        articleInfo.article_labels = articleInfo.article_labels.split(",");
         return articleInfo;
       });
 
@@ -49,22 +56,19 @@ class Basic {
   getArticleMain = async (req: Request, res: Response) => {
     const { article_id } = req.query;
     try {
-      const retrieveRes = await queryPromise(
+      const retrieveRes: ArticleSrc[] = await queryPromise(
         "SELECT * FROM articles WHERE article_id=?",
         article_id
       );
-
-      let article_main = retrieveRes[0];
-      article_main.article_major = (article_main.article_major as string).split(
-        ","
-      );
-      article_main.article_labels = (
-        article_main.article_labels as string
-      ).split(",");
+      const result = {
+        ...retrieveRes[0],
+        article_major: retrieveRes[0].article_major.split(","),
+        article_labels: retrieveRes[0].article_labels.split(","),
+      };
       unifiedResponseBody({
         res,
         result_msg: "获取文章内容成功",
-        result: article_main,
+        result,
       });
     } catch (error) {
       errorHandler({
@@ -78,7 +82,7 @@ class Basic {
 
   // 上传文章的处理函数
   postArticle = async (req: Request, res: Response) => {
-    const article_body = req.body;
+    const article_body = req.body as PostArticleRequestBody;
     try {
       const article = {
         ...article_body,
@@ -102,16 +106,20 @@ class Basic {
 
   // 编辑文章的处理函数
   editArticle = async (req: Request, res: Response) => {
-    const { article_id, ...update_article } = req.body;
+    const { article_id, ...update_article } =
+      req.body as EditArticleRequestBody;
     try {
-      // 将major转换成以','分隔的字符串存储
-      update_article.article_major = update_article.article_major.join(",");
-      // 将labels转换成以','分隔的字符串存储
-      update_article.article_labels = update_article.article_labels.join(",");
+      const result = {
+        ...update_article,
+        article_major: update_article.article_major.join(","),
+        article_labels: update_article.article_labels.join(","),
+      };
+
       await queryPromise("update articles set ? where article_id = ?", [
-        update_article,
+        result,
         article_id,
       ]);
+
       unifiedResponseBody({
         res,
         result_msg: "编辑文章成功",
@@ -128,7 +136,7 @@ class Basic {
 
   // 删除文章的处理函数
   deleteArticle = async (req: Request, res: Response) => {
-    const { article_id } = req.body;
+    const { article_id } = req.body as DeleteArticleRequestBody;
     try {
       await queryPromise(
         "delete from articles where article_id = ?",
