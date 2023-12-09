@@ -8,7 +8,6 @@ import {
 } from "../../utils/index";
 import type {
   Article,
-  ArticleSrc,
   PostArticleRequestBody,
   EditArticleRequestBody,
   DeleteArticleRequestBody,
@@ -28,13 +27,12 @@ class Basic {
 
       // 处理文章列表
       const articleList = retrieveRes.map((item) => {
-        const articleInfo = {
+        return {
           ...item,
-          cover_image: getMarkdownImgSrc(item.artilce_md)[0],
+          cover_image: getMarkdownImgSrc(item.article_md)[0],
           article_major: item.article_major.split(","),
           article_labels: item.article_labels.split(","),
         };
-        return articleInfo;
       });
 
       unifiedResponseBody({
@@ -56,10 +54,14 @@ class Basic {
   getArticleMain = async (req: Request, res: Response) => {
     const { article_id } = req.query;
     try {
-      const retrieveRes: ArticleSrc[] = await queryPromise(
-        "SELECT * FROM articles WHERE article_id=?",
-        article_id
-      );
+      // 使用 JOIN 语句合并两个查询
+      const sql = `
+        SELECT articles.*, users.name as author_name, users.major as author_major, users.university as author_university, users.headphoto as author_headphoto, users.signature as author_signature, users.article_num as author_article_num
+        FROM articles
+        JOIN users ON articles.author_id = users.user_id
+        WHERE article_id=?
+      `;
+      const retrieveRes: Article[] = await queryPromise(sql, article_id);
       const result = {
         ...retrieveRes[0],
         article_major: retrieveRes[0].article_major.split(","),

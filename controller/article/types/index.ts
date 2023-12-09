@@ -26,9 +26,9 @@ export interface PostArticleRequestBody {
    */
   article_md: string;
   /**
-   * 文章状态，0-原创文章，1-转载文章
+   * 文章状态，1-原创文章，2-转载文章
    */
-  article_status: 0 | 1;
+  article_status: 1 | 2;
   /**
    * 文章标题
    */
@@ -160,65 +160,89 @@ export interface Article {
    */
   article_id: number;
   /**
-   * 文章简介
+   * 文章标题
    */
-  article_introduce: string;
+  article_title: string;
+  /**
+   * 文章状态，1-原创文章，2-转载文章
+   */
+  article_status: 1 | 2;
+  /**
+   * 文章专业
+   */
+  article_major: string;
   /**
    * 文章标签列表
    */
   article_labels: string;
   /**
-   * 文章原文链接
+   * 文章简介
    */
-  article_link?: string;
-  /**
-   * 文章所属专业
-   */
-  article_major: string;
-  /**
-   * 文章状态码，1-转载文章，2-原创文章
-   */
-  article_status: 1 | 2;
-  /**
-   * 文章标题
-   */
-  article_title: string;
-  /**
-   * 文章更新的日期
-   */
-  article_updatedate: string;
-  /**
-   * 文章发布的日期
-   */
-  article_uploaddate: string;
-  /**
-   * 文章md原文文档
-   */
-  artilce_md: string;
+  article_introduce: string;
   /**
    * 文章作者id
    */
-  author_id: string;
+  author_id: number;
   /**
-   * 文章被收藏数
+   * 文章转载URL
    */
-  collection_num: string;
+  article_link?: string;
   /**
-   * 文章被评论数
+   * 文章点赞数
    */
-  comment_num: string;
+  like_num: number;
   /**
-   * 文章被点赞数
+   * 文章收藏数
    */
-  like_num: string;
+  collection_num: number;
   /**
-   * 文章被分享数
+   * 文章评论数
    */
-  share_num: string;
+  comment_num: number;
   /**
-   * 文章被浏览数
+   * 文章分享数
    */
-  view_num: string;
+  share_num: number;
+  /**
+   * 文章浏览数
+   */
+  view_num: number;
+  /**
+   * 文章发布日期
+   */
+  article_uploaddate: string;
+  /**
+   * 文章更新日期
+   */
+  article_updatedate: string;
+  /**
+   * 文章Markdown字符串
+   */
+  article_md: string;
+  /**
+   * 文章作者名称
+   */
+  author_name: string;
+  /**
+   * 文章作者专业
+   */
+  author_major: string;
+  /**
+   * 文章作者大学
+   */
+  author_university: string;
+  /**
+   * 文章作者头像
+   */
+  author_headphoto: string;
+  /**
+   * 文章作者签名
+   */
+  author_signature: string;
+  /**
+   * 文章作者发布文章数
+   */
+  author_article_num: number;
 }
 
 /**

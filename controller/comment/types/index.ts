@@ -11,7 +11,7 @@ export interface CommentActionRequestBody {
   /**
    * 评论的对象id
    */
-  article_id: number;
+  article_id?: number;
   /**
    * 用户填写的评论内容（action_type =1）
    */
@@ -19,7 +19,7 @@ export interface CommentActionRequestBody {
   /**
    * 发布该评论的日期
    */
-  create_date: string;
+  create_date?: string;
   /**
    * 要删除的评论id（action_type = 2）
    */
@@ -35,7 +35,11 @@ export interface CommentActionRequestBody {
   /**
    * 发布该评论的用户id
    */
-  user_id: number;
+  user_id?: number;
+  /**
+   * 评论级别，0-一级评论，1-二级评论
+   */
+  comment_level?: 0 | 1;
 }
 
 /**

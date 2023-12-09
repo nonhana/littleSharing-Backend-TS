@@ -150,9 +150,14 @@ class Basic {
 
       const { password, ...userInfo } = retrieveRes[0];
 
+      const result = {
+        ...userInfo,
+        major: userInfo.major.split(","),
+      };
+
       unifiedResponseBody({
         result_msg: "获取用户信息成功",
-        result: userInfo,
+        result,
         res,
       });
     } catch (error) {

@@ -103,6 +103,14 @@ export interface AddLikeRequestBody {
    * 文章id
    */
   article_id: number;
+  /**
+   * 用户id
+   */
+  user_id: number;
+  /**
+   * 点赞时间，如果是取消点赞，则不需要传递该参数
+   */
+  update_date?: string;
 }
 
 /**
@@ -117,6 +125,14 @@ export interface AddCollectRequestBody {
    * 文章id
    */
   article_id: number;
+  /**
+   * 用户id
+   */
+  user_id: number;
+  /**
+   * 收藏时间，如果是取消收藏，则不需要传递该参数
+   */
+  update_date?: string;
 }
 
 /* ----------返回数据实体----------- */
@@ -160,7 +176,7 @@ export interface User {
   /**
    * 用户专业列表
    */
-  major: string[];
+  major: string;
   /**
    * 用户名称
    */

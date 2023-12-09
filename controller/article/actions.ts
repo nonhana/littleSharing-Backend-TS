@@ -208,7 +208,12 @@ class Actions {
     try {
       // 1. 通过article_title、article_major、article_labels、article_introduce进行模糊查询
       const articleListSource: ArticleSrc[] = await queryPromise(
-        "select * from articles where article_title like ? or article_major like ? or article_labels like ? or article_introduce like ?",
+        `
+        SELECT articles.*, users.name as author_name, users.major as author_major, users.university as author_university, users.headphoto as author_headphoto, users.signature as author_signature, users.article_num as author_article_num
+        from articles
+        JOIN users ON articles.author_id = users.user_id
+        where article_title like ? or article_major like ? or article_labels like ? or article_introduce like ?
+        `,
         [
           `%${origin_keyword}%`,
           `%${origin_keyword}%`,
