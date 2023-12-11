@@ -114,10 +114,14 @@ class Basic {
           ...commentSource,
           user_id: req.state!.userInfo!.user_id,
         };
-        // 添加评论
-        await queryPromise("insert into comments set ?", commentInfo);
+        // 添加评论，并返回评论id
+        const { insertId } = await queryPromise(
+          "insert into comments set ?",
+          commentInfo
+        );
         unifiedResponseBody({
           result_msg: "评论成功",
+          result: insertId,
           res,
         });
       } else if (action_type === 1) {

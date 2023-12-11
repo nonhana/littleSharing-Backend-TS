@@ -45,14 +45,16 @@ class Actions {
   // 新增文章标签的处理函数
   addArticleLabel = async (req: Request, res: Response) => {
     const { label_list } = req.body as AddArticleLabelRequestBody;
+    console.log(label_list);
     try {
       // 筛选出目前数据库中还没有的标签
       const retrieveRes: Label[] = await queryPromise(
         "select * from article_labels"
       );
-      const newLabelList = label_list.filter((item) =>
-        retrieveRes.some((label) => label.label_name === item)
-      );
+      const labelSet = new Set<string>();
+      retrieveRes.forEach((item) => labelSet.add(item.label_name));
+      const newLabelList = label_list.filter((item) => !labelSet.has(item));
+      console.log(newLabelList);
       // 将新标签插入数据库
       newLabelList.forEach(async (item) => {
         await queryPromise("insert into article_labels set ?", {

@@ -9,6 +9,7 @@ import cors from "cors";
 import userRouter from "./routes/user";
 import articleRouter from "./routes/article";
 import commentRouter from "./routes/comment";
+import messageRouter from "./routes/message";
 
 const app = express();
 
@@ -25,9 +26,13 @@ app.use(cors());
 app.use(express.static("public")); // 配置静态资源路径
 
 // 注册路由模块
+app.get("/", (_, res) => {
+  res.send("这是后端接口地址，请勿直接访问！");
+});
 app.use("/user", userRouter);
 app.use("/article", articleRouter);
 app.use("/comment", commentRouter);
+app.use("/message", messageRouter);
 
 // 捕捉404并转发到错误处理器
 app.use(function (_, __, next) {

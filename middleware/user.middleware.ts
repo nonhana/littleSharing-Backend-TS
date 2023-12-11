@@ -16,7 +16,7 @@ interface TokenUser {
 // 将 Request 接口扩展，增加 state 属性，存储用户信息
 export interface AuthenticatedRequest extends Request {
   state?: {
-    userInfo?: TokenUser;
+    userInfo: TokenUser;
   };
 }
 
@@ -44,7 +44,9 @@ export const auth = async (
 
   // 如果前端发的请求带了 token，就验证 token，将用户信息存储到 state 中
   try {
-    req.state = {};
+    req.state = {
+      userInfo: {} as TokenUser,
+    };
     req.state.userInfo = jwt.verify(
       token,
       process.env.JWT_SECRET!

@@ -91,10 +91,14 @@ class Basic {
         article_major: article_body.article_major.join(","),
         article_labels: article_body.article_labels.join(","),
       };
-      await queryPromise("INSERT INTO articles SET ?", article);
+      const { insertId } = await queryPromise(
+        "INSERT INTO articles SET ?",
+        article
+      );
       unifiedResponseBody({
         res,
         result_msg: "上传文章成功",
+        result: insertId,
       });
     } catch (error) {
       errorHandler({

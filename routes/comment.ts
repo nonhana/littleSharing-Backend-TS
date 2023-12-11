@@ -1,5 +1,4 @@
 import express from "express";
-// import { commentController } from "../controller/comment";
 import { basic } from "../controller/comment/basic";
 import { otherData } from "../controller/comment/otherData";
 import { actions } from "../controller/comment/actions";
