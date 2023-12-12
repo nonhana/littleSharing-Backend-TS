@@ -12,7 +12,7 @@ class OtherData {
     try {
       const restrieveRes: { type: number; count: number }[] =
         await queryPromise(
-          `SELECT type, COUNT(*) AS count FROM messages WHERE user_id = ? AND status = 0 GROUP BY type`,
+          `SELECT type, COUNT(*) AS count FROM messages WHERE receiver_id = ? AND status = 0 GROUP BY type`,
           [req.state!.userInfo.user_id]
         );
       const result = {

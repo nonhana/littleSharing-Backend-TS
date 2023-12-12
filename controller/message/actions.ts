@@ -13,7 +13,7 @@ class Actions {
     const { type } = req.body as ReadMessageRequestBody;
     try {
       await queryPromise(
-        `UPDATE messages SET status = 1 WHERE user_id = ? AND type = ?`,
+        `UPDATE messages SET status = 1 WHERE receiver_id = ? AND type = ?`,
         [req.state!.userInfo.user_id, type]
       );
       unifiedResponseBody({

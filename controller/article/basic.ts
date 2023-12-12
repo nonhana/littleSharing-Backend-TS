@@ -15,13 +15,25 @@ import type {
 
 class Basic {
   // 获取文章列表的处理函数
-  getArticleList = async (_: Request, res: Response) => {
+  getArticleList = async (req: Request, res: Response) => {
+    const { page = 1, size = 5 } = req.query; // 默认值为第1页，每页5条
+    if (<number>page < 1 || <number>size < 1) {
+      unifiedResponseBody({
+        res,
+        result_code: 1,
+        result_msg: "page和size参数值必须为正整数",
+      });
+      return;
+    }
+    const offset = (<number>page - 1) * <number>size;
+
     try {
-      // 使用 JOIN 语句合并两个查询
+      // 使用 JOIN 语句合并两个查询，并添加 LIMIT 和 OFFSET 以实现分页
       const sql = `
         SELECT articles.*, users.name as author_name, users.major as author_major, users.university as author_university, users.headphoto as author_headphoto, users.signature as author_signature, users.article_num as author_article_num
         FROM articles
         JOIN users ON articles.author_id = users.user_id
+        LIMIT ${size} OFFSET ${offset}
       `;
       const retrieveRes: Article[] = await queryPromise(sql);
 
