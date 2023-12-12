@@ -39,4 +39,17 @@ export interface DeleteMessageRequestBody {
   message_id: number;
 }
 
+/**
+ * 更改指定类型的所有未读消息为已读的请求体
+ */
+export interface ReadMessageRequestBody {
+  /**
+   * 消息类型。
+   * 1. 基本消息（点赞、收藏消息+评论消息+被其他用户关注消息）
+   * 2. 关注的用户发布新文章消息
+   * 3. 系统消息
+   */
+  type: 1 | 2 | 3;
+}
+
 /* ----------返回数据实体---------- */
