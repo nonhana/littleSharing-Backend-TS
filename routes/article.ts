@@ -45,6 +45,7 @@ router.post(
   actions.uploadArticleImg
 ); // 上传文章图片
 router.get("/article-list", auth, basic.getArticleList); // 获取文章列表
+router.get("/latest-articles", auth, basic.getLatestArticleList); // 获取最新发布的文章列表
 router.post("/post-article", auth, basic.postArticle); // 发布文章
 router.post("/add-labels", auth, actions.addArticleLabel); // 新增文章标签
 router.get("/article-main", auth, basic.getArticleMain); // 获取具体文章内容

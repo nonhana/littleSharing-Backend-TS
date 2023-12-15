@@ -62,6 +62,43 @@ class Basic {
     }
   };
 
+  // 获取最新发布的五篇文章列表
+  getLatestArticleList = async (req: Request, res: Response) => {
+    try {
+      const sql = `
+        SELECT articles.*, users.name as author_name, users.major as author_major, users.university as author_university, users.headphoto as author_headphoto, users.signature as author_signature, users.article_num as author_article_num
+        FROM articles
+        JOIN users ON articles.author_id = users.user_id
+        ORDER BY article_id DESC
+        LIMIT 5
+      `;
+      const retrieveRes: Article[] = await queryPromise(sql);
+
+      // 处理文章列表
+      const articleList = retrieveRes.map((item) => {
+        return {
+          ...item,
+          cover_image: getMarkdownImgSrc(item.article_md)[0],
+          article_major: item.article_major.split(","),
+          article_labels: item.article_labels.split(","),
+        };
+      });
+
+      unifiedResponseBody({
+        res,
+        result_msg: "获取最新文章列表成功",
+        result: articleList,
+      });
+    } catch (error) {
+      errorHandler({
+        res,
+        error,
+        result: { error },
+        result_msg: "获取最新文章列表失败",
+      });
+    }
+  };
+
   // 获取具体文章内容的处理函数
   getArticleMain = async (req: Request, res: Response) => {
     const { article_id } = req.query;
