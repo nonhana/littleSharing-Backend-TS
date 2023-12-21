@@ -3,6 +3,7 @@ import {
   queryPromise,
   unifiedResponseBody,
   errorHandler,
+  uploadFileToCos,
 } from "../../utils/index";
 import type {
   Label,
@@ -23,8 +24,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 class Actions {
-  // 上传文章图片
-  uploadArticleImg = (req: Request, res: Response) => {
+  // 上传文章图片至腾讯云COS
+  uploadArticleImg = async (req: Request, res: Response) => {
     if (!req.file) {
       unifiedResponseBody({
         httpStatus: 400,
@@ -34,12 +35,25 @@ class Actions {
       });
       return;
     }
-    const imgPath = `${process.env.ARTICLE_IMG_PATH}/${req.file.filename}`;
-    unifiedResponseBody({
-      result_msg: "上传图片成功",
-      result: imgPath,
-      res,
-    });
+
+    const filePath = req.file.path;
+    const targetPath =
+      "images" + filePath.split("article-imgs")[1].replace(/\\/g, "/");
+    try {
+      const result = await uploadFileToCos(filePath, targetPath);
+      unifiedResponseBody({
+        result_msg: "上传成功",
+        result,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "上传失败",
+        result: { error },
+        res,
+      });
+    }
   };
 
   // 新增文章标签的处理函数
@@ -223,6 +237,7 @@ class Actions {
       );
 
       const article_list = articleListSource.map((item) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { artilce_md, ...article_item } = item;
         return {
           ...article_item,
@@ -294,7 +309,7 @@ class Actions {
 
       // 处理articleIdSet
       for (const article_id of articleIdSet) {
-        let itemRes: ArticleSimple = (
+        const itemRes: ArticleSimple = (
           await queryPromise(
             `
             select 

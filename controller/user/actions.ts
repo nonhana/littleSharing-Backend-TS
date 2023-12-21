@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
+import fs from "fs";
+import COS from "cos-nodejs-sdk-v5";
 import {
   queryPromise,
   unifiedResponseBody,
   errorHandler,
+  uploadFileToCos,
 } from "../../utils/index";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
 import type {
@@ -15,7 +18,7 @@ dotenv.config();
 
 class Actions {
   // 上传头像的处理函数
-  uploadAvatar = (req: Request, res: Response) => {
+  uploadAvatar = async (req: Request, res: Response) => {
     if (!req.file) {
       unifiedResponseBody({
         httpStatus: 400,
@@ -25,16 +28,30 @@ class Actions {
       });
       return;
     }
-    const imgPath = `${process.env.AVATAR_PATH}/${req.file.filename}`;
-    unifiedResponseBody({
-      result_msg: "上传图片成功",
-      result: imgPath,
-      res,
-    });
+
+    const filePath = req.file.path;
+    const targetPath =
+      "images" + filePath.split("avatars")[1].replace(/\\/g, "/");
+
+    try {
+      const result = await uploadFileToCos(filePath, targetPath);
+      unifiedResponseBody({
+        result_msg: "上传成功",
+        result,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "上传失败",
+        result: { error },
+        res,
+      });
+    }
   };
 
   // 上传背景的处理函数
-  uploadBackground = (req: Request, res: Response) => {
+  uploadBackground = async (req: Request, res: Response) => {
     if (!req.file) {
       unifiedResponseBody({
         httpStatus: 400,
@@ -44,12 +61,25 @@ class Actions {
       });
       return;
     }
-    const imgPath = `${process.env.BACKGROUND_PATH}/${req.file.filename}`;
-    unifiedResponseBody({
-      result_msg: "上传图片成功",
-      result: imgPath,
-      res,
-    });
+
+    const filePath = req.file.path;
+    const targetPath =
+      "images" + filePath.split("backgrounds")[1].replace(/\\/g, "/");
+    try {
+      const result = await uploadFileToCos(filePath, targetPath);
+      unifiedResponseBody({
+        result_msg: "上传成功",
+        result,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "上传失败",
+        result: { error },
+        res,
+      });
+    }
   };
 
   // 用户关注的处理函数

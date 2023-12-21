@@ -1,10 +1,12 @@
 import type { Request, Response } from "express";
+import axios from "axios";
 import {
   queryPromise,
   unifiedResponseBody,
   errorHandler,
   getMarkdownImgSrc,
   shuffle,
+  deleteFileFromCos,
 } from "../../utils/index";
 import type {
   Article,
@@ -12,6 +14,8 @@ import type {
   EditArticleRequestBody,
   DeleteArticleRequestBody,
 } from "./types";
+import dotenv from "dotenv";
+dotenv.config();
 
 class Basic {
   // 获取文章列表的处理函数
@@ -193,6 +197,31 @@ class Basic {
   deleteArticle = async (req: Request, res: Response) => {
     const { article_id } = req.body as DeleteArticleRequestBody;
     try {
+      const article_md_link = (
+        await queryPromise(
+          "select article_md_link from articles where article_id = ?",
+          article_id
+        )
+      )[0].article_md_link;
+
+      if (article_md_link !== "") {
+        // 1. 删除图片
+        const str = await axios.get(article_md_link).then((res) => res.data);
+        const imgSrcList = getMarkdownImgSrc(str);
+        await Promise.all(
+          imgSrcList.map((item) => {
+            return deleteFileFromCos(
+              item.split(process.env.COS_DOMAIN!)[1].slice(1)
+            );
+          })
+        );
+        // 2. 删除文章
+        await deleteFileFromCos(
+          article_md_link.split(process.env.COS_DOMAIN!)[1].slice(1)
+        );
+      }
+
+      // 3. 删除数据库中的文章
       await queryPromise(
         "delete from articles where article_id = ?",
         article_id

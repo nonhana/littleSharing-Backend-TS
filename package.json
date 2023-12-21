@@ -3,16 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon bin/server.ts",
+    "start": "ts-node bin/server.ts",
+    "start:dev": "nodemon bin/server.ts",
     "copy-static": "ts-node copyStatic.ts",
     "ts-build": "tsc",
     "build": "npm run ts-build && npm run copy-static"
   },
   "dependencies": {
+    "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
+    "cos-nodejs-sdk-v5": "^2.12.6",
     "crypto": "^1.0.1",
     "debug": "~2.6.9",
     "dotenv": "^16.3.1",
@@ -36,7 +39,12 @@
     "@types/mysql": "^2.15.21",
     "@types/node": "^20.4.5",
     "@types/shelljs": "^0.8.12",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-prettier": "^5.1.0",
     "nodemon": "^3.0.1",
+    "prettier": "^3.1.1",
     "shelljs": "^0.8.5",
     "typescript": "^5.1.6"
   }

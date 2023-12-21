@@ -244,6 +244,14 @@ export interface Article {
    * 文章作者发布文章数
    */
   author_article_num: number;
+  /**
+   * 文章MD链接
+   */
+  article_md_link: string;
+  /**
+   * 文章封面图片url
+   */
+  article_cover: string;
 }
 
 /**

@@ -1,67 +1,13 @@
 import express from "express";
-import multer from "multer";
+import {
+  avatarUpload,
+  backgroundUpload,
+} from "../middleware/upload.middleware";
 import { actions } from "../controller/user/actions";
 import { basic } from "../controller/user/basic";
 import { otherData } from "../controller/user/otherData";
 import { auth } from "../middleware/user.middleware";
-import { imgUploadError } from "../middleware/upload.middleware";
-
-// 头像上传
-const avatarUpload = multer({
-  storage: multer.diskStorage({
-    destination(_, __, cb) {
-      cb(null, "public/uploads/images/avatars");
-    },
-    filename(_, file, cb) {
-      cb(
-        null,
-        `${Date.now()}_${Math.floor(Math.random() * 1e9)}.${
-          file.mimetype.split("/")[1]
-        }`
-      );
-    },
-  }),
-  fileFilter: (_, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    // 定义允许的文件类型
-    const allowedTypes = ["image/jpeg", "image/png"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("仅支持jpg和png格式的图片，请重新上传"));
-    }
-  },
-  limits: {
-    fileSize: 1024 * 1024 * 5, // 限制最大图片5MB
-  },
-});
-// 背景上传
-const backgroundUpload = multer({
-  storage: multer.diskStorage({
-    destination(_, __, cb) {
-      cb(null, "public/uploads/images/backgrounds");
-    },
-    filename(_, file, cb) {
-      cb(
-        null,
-        `${Date.now()}_${Math.floor(Math.random() * 1e9)}.${
-          file.mimetype.split("/")[1]
-        }`
-      );
-    },
-  }),
-  fileFilter: (_, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    // 定义允许的文件类型
-    const allowedTypes = ["image/jpeg", "image/png"];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("仅支持jpg和png格式的图片，请重新上传"));
-    }
-  },
-  limits: {
-    fileSize: 1024 * 1024 * 5, // 限制最大图片5MB
-  },
-});
+import { uploadError } from "../middleware/upload.middleware";
 
 const router = express.Router();
 
@@ -69,14 +15,14 @@ router.post(
   "/upload-avatar",
   auth,
   avatarUpload.single("avatar"),
-  imgUploadError,
+  uploadError,
   actions.uploadAvatar
 ); // 上传头像
 router.post(
   "/upload-background",
   auth,
   backgroundUpload.single("background"),
-  imgUploadError,
+  uploadError,
   actions.uploadBackground
 ); // 上传背景
 router.post("/register", basic.register); // 注册
