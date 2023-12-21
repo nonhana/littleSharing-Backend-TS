@@ -24,5 +24,7 @@ module.exports = {
   rules: {
     // 允许any
     "@typescript-eslint/no-explicit-any": "off",
+    // 允许未使用变量
+    "@typescript-eslint/no-unused-vars": "off",
   },
 };
