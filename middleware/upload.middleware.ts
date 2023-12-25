@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { errorHandler } from "../utils/index";
+import {
+  errorHandler,
+  deleteFileFromCos,
+  getMarkdownImgSrc,
+} from "../utils/index";
 import multer from "multer";
+import axios from "axios";
 import fs from "fs";
 import COS from "cos-nodejs-sdk-v5";
 import dotenv from "dotenv";
@@ -80,16 +85,16 @@ export const articleImgUpload = multer({
     },
   }),
   fileFilter: (_, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    // 定义允许的文件类型
-    const allowedTypes = ["image/jpeg", "image/png"];
+    // 定义允许的文件类型：jpg，png，gif
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("仅支持jpg和png格式的图片，请重新上传"));
+      cb(new Error("仅支持jpg、png和gif格式的图片，请重新上传"));
     }
   },
   limits: {
-    fileSize: 1024 * 1024 * 5, // 限制最大图片5MB
+    fileSize: 1024 * 1024 * 20, // 限制最大图片20MB
   },
 });
 
@@ -175,7 +180,7 @@ export const saveMDFile = async (
       Body: fs.createReadStream(filePath) /* 必须 */,
       ContentLength: fs.statSync(filePath).size,
     },
-    (error, data) => {
+    async (error, data) => {
       if (error) {
         errorHandler({
           error,
@@ -184,6 +189,28 @@ export const saveMDFile = async (
           res,
         });
       } else {
+        // 判断req.body.article_md_link是否存在，若存在则删除该文章，并且删除该文章中的图片
+        if (req.body.article_md_link !== "") {
+          // 1. 删除图片
+          const str = await axios
+            .get(req.body.article_md_link)
+            .then((res) => res.data);
+          const imgSrcList = getMarkdownImgSrc(str);
+          await Promise.all(
+            imgSrcList.map((item) => {
+              return deleteFileFromCos(
+                item.split(process.env.COS_DOMAIN!)[1].slice(1)
+              );
+            })
+          );
+          // 2. 删除文章
+          await deleteFileFromCos(
+            req.body.article_md_link.split(process.env.COS_DOMAIN!)[1].slice(1)
+          );
+          // 3. 清空req.body.article_md_link
+          req.body.article_md_link = "";
+        }
+
         // 将保存成功的路径保存至req.body中
         req.body.article_md_link = "https://" + data.Location;
         // 保存成功后，删除本地的.md文件，清空表单的article_md字段，剔除filePath字段

@@ -34,7 +34,13 @@ router.post("/post-bookmark", auth, actions.addBookMark); // 添加文章书签
 router.get("/get-bookmark", auth, otherData.getBookMark); // 获取文章书签
 router.post("/remove-bookmark", auth, actions.removeBookMark); // 删除文章书签
 router.post("/delete-article", auth, basic.deleteArticle); // 删除文章
-router.post("/edit-article", auth, basic.editArticle); // 编辑文章
+router.post(
+  "/edit-article",
+  auth,
+  getMDFilePath,
+  saveMDFile,
+  basic.editArticle
+); // 编辑文章
 router.post("/add-article-trend", auth, actions.postArticleTrend); // 添加文章趋势
 router.post("/increase-view", auth, actions.increaseArticleView); // 增加文章浏览量
 router.get("/get-article-trend", auth, otherData.getArticleTrend); // 获取文章趋势
