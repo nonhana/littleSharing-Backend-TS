@@ -233,24 +233,24 @@ class OtherData {
         user_id
       );
       // 2. 对用户发布的文章标签进行统计
-      let source_data = retrieveRes.map((item) => item.article_labels);
-      function countOccurrences(arr: string[]) {
+      const source_data = retrieveRes.map((item) => item.article_labels);
+      const countOccurrences = (arr: string[]) => {
         const counts: {
           [key: string]: number;
         } = {};
-        for (let i = 0; i < arr.length; i++) {
-          const items = arr[i].split(",");
-          for (let j = 0; j < items.length; j++) {
-            const item = items[j].trim();
-            if (item in counts) {
-              counts[item]++;
+        arr.forEach((item) => {
+          const items = item.split(",");
+          items.forEach((item) => {
+            const key = item.trim();
+            if (key in counts) {
+              counts[key]++;
             } else {
-              counts[item] = 1;
+              counts[key] = 1;
             }
-          }
-        }
+          });
+        });
         return counts;
-      }
+      };
       const counts = countOccurrences(source_data);
       const sortedCounts = Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
@@ -305,10 +305,17 @@ class OtherData {
 
   // 获取用户的收藏列表
   getUserCollectList = async (req: AuthenticatedRequest, res: Response) => {
+    // const { user_id } = req.query;
+    let user_id: number;
+    if (req.query.user_id) {
+      user_id = Number(req.query.user_id);
+    } else {
+      user_id = req.state!.userInfo!.user_id;
+    }
     try {
       const retrieveRes: { article_id: number }[] = await queryPromise(
         "select article_id from article_collect where user_id=?",
-        req.state!.userInfo!.user_id
+        user_id
       );
 
       const collect_list = retrieveRes.map((item) => item.article_id);
@@ -343,7 +350,7 @@ class OtherData {
         where a.author_id = ?
       `;
 
-      let retrieveRes: ArticleSimple[] = await queryPromise(sql, user_id);
+      const retrieveRes: ArticleSimple[] = await queryPromise(sql, user_id);
 
       const result = retrieveRes.map((item) => {
         return {
