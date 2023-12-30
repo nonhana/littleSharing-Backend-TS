@@ -23,8 +23,8 @@ class Basic {
         article_id
       );
 
-      let level0_comment_list: Level0Comment[] = []; // 一级评论列表
-      let level1_comment_list: Level1Comment[] = []; // 二级评论列表
+      const level0_comment_list: Level0Comment[] = []; // 一级评论列表
+      const level1_comment_list: Level1Comment[] = []; // 二级评论列表
 
       for (const item of commentSource) {
         const user_id = item.user_id;
@@ -49,7 +49,7 @@ class Basic {
           };
           level0_comment_list.push(level0_comment_item);
         } else if (item.comment_level === 1) {
-          let level1_comment_item: Level1Comment = {
+          const level1_comment_item: Level1Comment = {
             response_to_comment_id: item.response_to_comment_id,
             comment_id: item.comment_id,
             comment_content: item.comment_content,

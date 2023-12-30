@@ -245,8 +245,15 @@ class Actions {
           article_labels: (item.article_labels as string).split(","),
         };
       });
-
-      // 2. 搜索时将搜索关键词提交给数据库后台并做记录
+      // 2. 如果用户登录了，搜索时将搜索关键词提交给数据库后台并做记录
+      if (!req.state?.userInfo) {
+        unifiedResponseBody({
+          result_msg: "查询文章成功",
+          result: article_list,
+          res,
+        });
+        return;
+      }
       const keyword = (<string>origin_keyword).toLowerCase();
       const userKeyWordSource: Keyword[] = await queryPromise(
         "SELECT * FROM keywords WHERE user_id = ?",

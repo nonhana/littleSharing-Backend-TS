@@ -43,7 +43,7 @@ class OtherData {
   };
 
   // 获取用户的article_labels
-  getArticleLabels = async (_: AuthenticatedRequest, res: Response) => {
+  getArticleLabels = async (_: Request, res: Response) => {
     try {
       // 获取全局的article_labels
       const labels: Label[] = await queryPromise(
@@ -126,11 +126,12 @@ class OtherData {
   };
 
   // 获取用户的被点赞文章数据
-  getLikedArticles = async (req: AuthenticatedRequest, res: Response) => {
+  getLikedArticles = async (req: Request, res: Response) => {
+    const { user_id } = req.query;
     try {
       const retrieveRes: Like[] = await queryPromise(
         "select * from article_like where article_id in (select article_id from articles where author_id = ? )",
-        req.state!.userInfo!.user_id
+        user_id
       );
       unifiedResponseBody({
         result_msg: "获取用户点赞文章成功",
@@ -150,11 +151,12 @@ class OtherData {
   };
 
   // 获取用户的被收藏文章数据
-  getCollectedArticles = async (req: AuthenticatedRequest, res: Response) => {
+  getCollectedArticles = async (req: Request, res: Response) => {
+    const { user_id } = req.query;
     try {
       const retrieveRes: Collect[] = await queryPromise(
         "select * from article_collect where article_id in (select article_id from articles where author_id = ?)",
-        req.state!.userInfo!.user_id
+        user_id
       );
       unifiedResponseBody({
         result_msg: "获取用户收藏文章成功",
