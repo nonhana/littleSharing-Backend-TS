@@ -25,8 +25,8 @@ router.post(
   uploadError,
   actions.uploadBackground
 ); // 上传背景
-router.post("/register", basic.register); // 注册
-router.post("/login", basic.login); // 登录
+router.post("/register", basic.register); // 注册（无需token）
+router.post("/login", basic.login); // 登录（无需token）
 router.get("/get-user-keywords", otherData.getUserKeywords); // 获取用户的keywords（无需token）
 router.get("/get-article-labels", otherData.getArticleLabels); // 获取文章标签列表（无需token）
 router.get("/get-user-info", basic.getUserInfo); // 获取用户信息（无需token）

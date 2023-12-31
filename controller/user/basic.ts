@@ -114,7 +114,7 @@ class Basic {
         unifiedResponseBody({
           result_code: 0,
           result_msg: "登录成功",
-          result: token,
+          result: { token, user_id: user.user_id },
           res,
         });
       }
@@ -131,23 +131,13 @@ class Basic {
   };
 
   // 获取某用户的信息
-  getUserInfo = async (req: AuthenticatedRequest, res: Response) => {
+  getUserInfo = async (req: Request, res: Response) => {
     const { user_id } = req.query;
     try {
-      let retrieveRes: User[];
-      // 有id，通过id获取；无id，通过解析token获取
-      if (user_id) {
-        retrieveRes = await queryPromise(
-          "select * from users where user_id = ?",
-          user_id
-        );
-      } else {
-        retrieveRes = await queryPromise(
-          "select * from users where user_id = ?",
-          req.state!.userInfo!.user_id
-        );
-      }
-
+      const retrieveRes: User[] = await queryPromise(
+        "select * from users where user_id = ?",
+        user_id
+      );
       const { password, ...userInfo } = retrieveRes[0];
 
       const result = {

@@ -98,7 +98,7 @@ export const articleImgUpload = multer({
   },
 });
 
-// 控制上传报错的中间件
+// 控制multer中间件上传报错的中间件
 export const uploadError = (
   error: Error,
   _: Request,

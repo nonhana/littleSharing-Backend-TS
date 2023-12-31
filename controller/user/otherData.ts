@@ -12,19 +12,14 @@ dotenv.config();
 
 class OtherData {
   // 获取用户的keywords
-  getUserKeywords = async (req: AuthenticatedRequest, res: Response) => {
+  getUserKeywords = async (req: Request, res: Response) => {
     const { user_id } = req.query;
     try {
       // 获取该用户的keywords
-      const keywords: Keyword[] = user_id
-        ? await queryPromise(
-            "select keywords_name, keywords_count from keywords where user_id = ?",
-            user_id
-          )
-        : await queryPromise(
-            "select keywords_name, keywords_count from keywords where user_id = ?",
-            req.state!.userInfo!.user_id
-          );
+      const keywords: Keyword[] = await queryPromise(
+        "select keywords_name, keywords_count from keywords where user_id = ?",
+        user_id
+      );
       unifiedResponseBody({
         result_msg: "获取用户keywords成功",
         result: keywords,
@@ -306,14 +301,8 @@ class OtherData {
   };
 
   // 获取用户的收藏列表
-  getUserCollectList = async (req: AuthenticatedRequest, res: Response) => {
-    // const { user_id } = req.query;
-    let user_id: number;
-    if (req.query.user_id) {
-      user_id = Number(req.query.user_id);
-    } else {
-      user_id = req.state!.userInfo!.user_id;
-    }
+  getUserCollectList = async (req: Request, res: Response) => {
+    const { user_id } = req.query;
     try {
       const retrieveRes: { article_id: number }[] = await queryPromise(
         "select article_id from article_collect where user_id=?",
