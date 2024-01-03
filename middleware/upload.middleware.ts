@@ -191,23 +191,11 @@ export const saveMDFile = async (
       } else {
         // 判断req.body.article_md_link是否存在，若存在则删除该文章，并且删除该文章中的图片
         if (req.body.article_md_link !== "") {
-          // 1. 删除图片
-          const str = await axios
-            .get(req.body.article_md_link)
-            .then((res) => res.data);
-          const imgSrcList = getMarkdownImgSrc(str);
-          await Promise.all(
-            imgSrcList.map((item) => {
-              return deleteFileFromCos(
-                item.split(process.env.COS_DOMAIN!)[1].slice(1)
-              );
-            })
-          );
-          // 2. 删除文章
+          // 1. 删除文章
           await deleteFileFromCos(
             req.body.article_md_link.split(process.env.COS_DOMAIN!)[1].slice(1)
           );
-          // 3. 清空req.body.article_md_link
+          // 2. 清空req.body.article_md_link
           req.body.article_md_link = "";
         }
 
