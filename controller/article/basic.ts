@@ -115,6 +115,16 @@ class Basic {
         WHERE article_id=?
       `;
       const retrieveRes: Article[] = await queryPromise(sql, article_id);
+      // 找不到对应的文章，返回404
+      if (retrieveRes.length === 0) {
+        unifiedResponseBody({
+          httpStatus: 404,
+          res,
+          result_code: 1,
+          result_msg: "找不到对应的文章",
+        });
+        return;
+      }
       const result = {
         ...retrieveRes[0],
         article_major: retrieveRes[0].article_major.split(","),

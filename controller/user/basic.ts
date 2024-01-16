@@ -138,6 +138,16 @@ class Basic {
         "select * from users where user_id = ?",
         user_id
       );
+      // 找不到对应的用户，返回404
+      if (retrieveRes.length === 0) {
+        unifiedResponseBody({
+          httpStatus: 404,
+          res,
+          result_code: 1,
+          result_msg: "找不到对应的用户",
+        });
+        return;
+      }
       const { password, ...userInfo } = retrieveRes[0];
 
       const result = {
