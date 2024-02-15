@@ -1,11 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import {
-  errorHandler,
-  deleteFileFromCos,
-  getMarkdownImgSrc,
-} from "../utils/index";
+import { errorHandler, deleteFileFromCos } from "../utils/index";
 import multer from "multer";
-import axios from "axios";
 import fs from "fs";
 import COS from "cos-nodejs-sdk-v5";
 import dotenv from "dotenv";
