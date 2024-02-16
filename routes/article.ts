@@ -29,6 +29,7 @@ router.post(
   basic.postArticle
 ); // 发布文章
 router.post("/add-labels", auth, actions.addArticleLabel); // 新增文章标签
+router.post("/remove-label", auth, actions.removeArticleLabel); // 删除文章标签
 router.get("/article-main", basic.getArticleMain); // 获取具体文章内容（无需token）
 router.post("/post-bookmark", auth, actions.addBookMark); // 添加文章书签
 router.get("/get-bookmark", auth, otherData.getBookMark); // 获取文章书签

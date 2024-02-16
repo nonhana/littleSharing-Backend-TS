@@ -17,6 +17,7 @@ import type {
   RemoveBookMarkRequestBody,
   PostArticleTrendRequestBody,
   IncreaseArticleViewRequestBody,
+  RemoveArticleLabelRequestBody,
 } from "./types";
 import type { AuthenticatedRequest } from "../../middleware/user.middleware";
 import { months } from "../../constant";
@@ -83,6 +84,30 @@ class Actions {
         error,
         result: { error },
         result_msg: "新增文章标签失败",
+      });
+    }
+  };
+
+  // 删除文章标签的处理函数
+  removeArticleLabel = async (req: Request, res: Response) => {
+    const { label_id_list } = req.body as RemoveArticleLabelRequestBody;
+    try {
+      // 根据label_id_list，集中删除数据库中的标签
+      await Promise.all(
+        label_id_list.map((item) =>
+          queryPromise("delete from article_labels where label_id = ?", item)
+        )
+      );
+      unifiedResponseBody({
+        res,
+        result_msg: "删除文章标签成功",
+      });
+    } catch (error) {
+      errorHandler({
+        res,
+        error,
+        result: { error },
+        result_msg: "删除文章标签失败",
       });
     }
   };

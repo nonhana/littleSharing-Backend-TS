@@ -103,6 +103,16 @@ export interface AddArticleLabelRequestBody {
 }
 
 /**
+ * 删除文章标签的请求体
+ */
+export interface RemoveArticleLabelRequestBody {
+  /**
+   * 要删除的标签id数组
+   */
+  label_id_list: number[];
+}
+
+/**
  * 新增文章书签的请求体
  */
 export interface AddBookMarkRequestBody {
