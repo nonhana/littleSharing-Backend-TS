@@ -28,10 +28,10 @@ function createServer() {
   if (process.env.NODE_ENV === "production") {
     const options = {
       key: fs.readFileSync(
-        path.join(__dirname, "../public/ssl/nonhana.site.key")
+        path.join(__dirname, "../public/ssl/nonhana-server.cn.key")
       ),
       cert: fs.readFileSync(
-        path.join(__dirname, "../public/ssl/nonhana.site_bundle.pem")
+        path.join(__dirname, "../public/ssl/nonhana-server.cn_bundle.pem")
       ),
     };
     return https.createServer(options, app);
@@ -84,9 +84,11 @@ function onError(error: any) {
     case "EACCES":
       console.error(bind + " 需要提升权限");
       process.exit(1);
+      break;
     case "EADDRINUSE":
       console.error(bind + " 已经在使用中");
       process.exit(1);
+      break;
     default:
       throw error;
   }
