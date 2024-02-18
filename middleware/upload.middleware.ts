@@ -196,11 +196,10 @@ export const saveMDFile = async (
 
         // 将保存成功的路径保存至req.body中
         req.body.article_md_link = "https://" + data.Location;
-        // 保存成功后，删除本地的.md文件，清空表单的article_md字段，剔除filePath字段
+        // 保存成功后，删除本地的.md文件，剔除filePath和article_md字段
         fs.unlinkSync(filePath);
-        req.body.article_md = "";
         delete req.body.filePath;
-
+        delete req.body.article_md;
         next();
       }
     }
