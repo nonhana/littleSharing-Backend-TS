@@ -7,7 +7,7 @@
     "start:dev": "nodemon bin/server.ts",
     "copy-static": "ts-node copyStatic.ts",
     "ts-build": "tsc",
-    "build": "npm run ts-build && npm run copy-static"
+    "build": "npm run ts-build --unsafe-perm && npm run copy-static --unsafe-perm"
   },
   "dependencies": {
     "axios": "^1.6.2",
