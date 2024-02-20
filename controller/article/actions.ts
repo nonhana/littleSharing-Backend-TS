@@ -57,6 +57,38 @@ class Actions {
     }
   };
 
+  // 上传文章封面图片至腾讯云COS
+  uploadArticleCover = async (req: Request, res: Response) => {
+    if (!req.file) {
+      unifiedResponseBody({
+        httpStatus: 400,
+        result_code: 1,
+        result_msg: "未检测到上传文件",
+        res,
+      });
+      return;
+    }
+
+    const filePath = req.file.path;
+    const targetPath =
+      "images" + filePath.split("article-covers")[1].replace(/\\/g, "/");
+    try {
+      const result = await uploadFileToCos(filePath, targetPath);
+      unifiedResponseBody({
+        result_msg: "上传成功",
+        result,
+        res,
+      });
+    } catch (error) {
+      errorHandler({
+        error,
+        result_msg: "上传失败",
+        result: { error },
+        res,
+      });
+    }
+  };
+
   // 新增文章标签的处理函数
   addArticleLabel = async (req: Request, res: Response) => {
     const { label_list } = req.body as AddArticleLabelRequestBody;

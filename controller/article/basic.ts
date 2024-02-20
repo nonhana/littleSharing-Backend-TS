@@ -45,7 +45,6 @@ class Basic {
       const articleList = retrieveRes.map((item) => {
         return {
           ...item,
-          cover_image: getMarkdownImgSrc(item.article_md)[0],
           article_major: item.article_major.split(","),
           article_labels: item.article_labels.split(","),
         };
@@ -82,7 +81,6 @@ class Basic {
       const articleList = retrieveRes.map((item) => {
         return {
           ...item,
-          cover_image: getMarkdownImgSrc(item.article_md)[0],
           article_major: item.article_major.split(","),
           article_labels: item.article_labels.split(","),
         };

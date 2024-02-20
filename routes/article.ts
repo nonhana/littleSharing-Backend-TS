@@ -5,6 +5,7 @@ import { actions } from "../controller/article/actions";
 import { auth } from "../middleware/user.middleware";
 import {
   articleImgUpload,
+  articleCoverUpload,
   uploadError,
   getMDFilePath,
   saveMDFile,
@@ -19,6 +20,13 @@ router.post(
   uploadError,
   actions.uploadArticleImg
 ); // 上传文章图片
+router.post(
+  "/upload-article-cover",
+  auth,
+  articleCoverUpload.single("articleCover"),
+  uploadError,
+  actions.uploadArticleCover
+); // 上传文章封面图片
 router.get("/article-list", basic.getArticleList); // 获取文章列表（无需token）
 router.get("/latest-articles", basic.getLatestArticleList); // 获取最新发布的文章列表（无需token）
 router.post(
