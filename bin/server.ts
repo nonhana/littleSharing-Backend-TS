@@ -28,10 +28,10 @@ function createServer() {
   if (process.env.NODE_ENV === "production") {
     const options = {
       key: fs.readFileSync(
-        path.join(__dirname, "../public/ssl/nonhana-server.one.key")
+        path.join(__dirname, "../public/ssl/nonhana-server.cn.key")
       ),
       cert: fs.readFileSync(
-        path.join(__dirname, "../public/ssl/nonhana-server.one.pem")
+        path.join(__dirname, "../public/ssl/nonhana-server.cn_bundle.pem")
       ),
     };
     return https.createServer(options, app);
