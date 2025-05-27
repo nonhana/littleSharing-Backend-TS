@@ -3,9 +3,6 @@
  */
 import dotenv from 'dotenv'
 import http from 'http'
-import https from 'https'
-import fs from 'fs'
-import path from 'path'
 import app from '../app'
 import debug from 'debug'
 
@@ -21,21 +18,9 @@ const port = normalizePort(process.env.PORT || '4000')
 app.set('port', port)
 
 /**
- * 定义创建 HTTP/HTTPS 服务器的函数：
- * 如果是生产环境，则使用 HTTPS 创建服务器，否则使用 HTTP 创建服务器。
+ * 创建 HTTP 服务器。
  */
-function createServer() {
-  if (process.env.NODE_ENV === 'production') {
-    const options = {
-      key: fs.readFileSync(path.join(__dirname, '../public/ssl/caelum.key')),
-      cert: fs.readFileSync(path.join(__dirname, '../public/ssl/caelum.pem')),
-    }
-    return https.createServer(options, app)
-  } else {
-    return http.createServer(app)
-  }
-}
-const server = createServer()
+const server = http.createServer(app)
 
 /**
  * 监听指定端口，绑定在所有网络接口上。
@@ -66,7 +51,7 @@ function normalizePort(val: any) {
 }
 
 /**
- * HTTP/HTTPS 服务器 "error" 事件的事件监听器。
+ * HTTP 服务器 "error" 事件的事件监听器。
  */
 function onError(error: any) {
   if (error.syscall !== 'listen') {
@@ -91,7 +76,7 @@ function onError(error: any) {
 }
 
 /**
- * HTTP/HTTPS 服务器 "listening" 事件的事件监听器。
+ * HTTP 服务器 "listening" 事件的事件监听器。
  */
 function onListening() {
   const addr = server.address()
